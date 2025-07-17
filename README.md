@@ -2,6 +2,12 @@
 
 A modern, lightweight TypeScript HTTP client that's **zero dependencies** (13KB), **universal** (works in browsers and servers), and built on **native fetch**. Features Standard Schema validation, retry logic, timeout support, and comprehensive error handling.
 
+[![npm version](https://badge.fury.io/js/arcesso.svg)](https://badge.fury.io/js/arcesso)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](http://makeapullrequest.com)
+
+> **arcesso** _(v.)_ - from Latin, meaning "to summon" or "to fetch": the act of calling forth or retrieving something, just like how this library elegantly fetches data from APIs.
+
 **Perfect for production**: Tiny bundle, type-safe validation with Zod/Valibot, and works everywhere.
 
 ## Why Arcesso?
