@@ -31,7 +31,9 @@ test('httpkit - works with Zod (Standard Schema)', async () => {
 
   mockFetch.mockResolvedValueOnce(mockResponse);
 
-  const result = await get('/api/users/1', { schemas: { success: UserSchema } });
+  const result = await get('/api/users/1', {
+    schemas: { success: UserSchema },
+  });
 
   expect(result).toEqual({ id: 1, name: 'John', email: 'john@example.com' });
 });
@@ -56,7 +58,9 @@ test('httpkit - works with Valibot (Standard Schema)', async () => {
 
   mockFetch.mockResolvedValueOnce(mockResponse);
 
-  const result = await get('/api/users/2', { schemas: { success: UserSchema } });
+  const result = await get('/api/users/2', {
+    schemas: { success: UserSchema },
+  });
 
   expect(result).toEqual({ id: 2, name: 'Jane', email: 'jane@example.com' });
 });
@@ -158,7 +162,9 @@ test('httpkit - Mixed validation libraries in same app', async () => {
     .mockResolvedValueOnce(mockResponse2);
 
   // Use Zod schema
-  const zodResult = await get('/api/users/1', { schemas: { success: ZodUserSchema } });
+  const zodResult = await get('/api/users/1', {
+    schemas: { success: ZodUserSchema },
+  });
 
   // Use Valibot schema
   const valibotResult = await get('/api/users/1', {

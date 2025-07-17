@@ -46,7 +46,9 @@ export async function executeHttpRequest(
         if (errorSchema) {
           try {
             const responseClone = response.clone();
-            const enhancedResponseClone = EnhancedResponse.from(responseClone as Response);
+            const enhancedResponseClone = EnhancedResponse.from(
+              responseClone as Response
+            );
             const errorData = await enhancedResponseClone.json(errorSchema);
             const httpError = new HttpError(
               `HTTP ${response.status}: ${response.statusText}`,

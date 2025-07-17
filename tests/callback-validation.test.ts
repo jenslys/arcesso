@@ -56,7 +56,7 @@ test('onSuccess with schema validation - valid result', async () => {
 
   mockFetch.mockResolvedValueOnce(mockResponse);
 
-  const result = await get('/users/1', {
+  const result = (await get('/users/1', {
     schemas: { success: UserSchema },
     onSuccess: {
       schema: ProcessedUserSchema,
@@ -74,7 +74,7 @@ test('onSuccess with schema validation - valid result', async () => {
         };
       },
     },
-  }) as ProcessedUser;
+  })) as ProcessedUser;
 
   expect(result).toEqual({
     id: 1,
@@ -120,7 +120,9 @@ test('onSuccess with schema validation - invalid result throws ValidationError',
   } catch (error) {
     console.log('Caught error:', error);
     expect(error).toBeInstanceOf(ValidationError);
-    expect((error as ValidationError).message).toContain('Callback result validation failed');
+    expect((error as ValidationError).message).toContain(
+      'Callback result validation failed'
+    );
   }
 });
 
@@ -175,7 +177,9 @@ test('onError with schema validation - invalid result throws ValidationError', a
     expect.unreachable('Should have thrown ValidationError');
   } catch (error) {
     expect(error).toBeInstanceOf(ValidationError);
-    expect((error as ValidationError).message).toContain('Callback result validation failed');
+    expect((error as ValidationError).message).toContain(
+      'Callback result validation failed'
+    );
   }
 });
 

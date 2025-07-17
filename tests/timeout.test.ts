@@ -63,7 +63,9 @@ test('timeout - request times out with TimeoutError', async () => {
     expect.unreachable('Should have thrown TimeoutError');
   } catch (error) {
     expect(error).toBeInstanceOf(TimeoutError);
-    expect((error as TimeoutError).message).toContain('Request timed out after 100ms');
+    expect((error as TimeoutError).message).toContain(
+      'Request timed out after 100ms'
+    );
     expect((error as TimeoutError).timeout).toBe(100);
   }
 });

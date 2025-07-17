@@ -63,7 +63,9 @@ test('httpkit - basic successful request', async () => {
 
   mockFetch.mockResolvedValueOnce(mockResponse);
 
-  const result = await get('/api/users/1', { schemas: { success: UserSchema } });
+  const result = await get('/api/users/1', {
+    schemas: { success: UserSchema },
+  });
 
   expect(result).toEqual({ id: 1, name: 'John', email: 'john@example.com' });
   expect(mockFetch).toHaveBeenCalledWith('/api/users/1', {
@@ -194,9 +196,13 @@ test('httpkit - POST request with body', async () => {
 
   mockFetch.mockResolvedValueOnce(mockResponse);
 
-  const result = await post('/api/users', { name: 'Jane', email: 'jane@example.com' }, {
-    schemas: { success: UserSchema },
-  });
+  const result = await post(
+    '/api/users',
+    { name: 'Jane', email: 'jane@example.com' },
+    {
+      schemas: { success: UserSchema },
+    }
+  );
 
   expect(result).toEqual({ id: 2, name: 'Jane', email: 'jane@example.com' });
   expect(mockFetch).toHaveBeenCalledWith('/api/users', {
@@ -219,7 +225,9 @@ test('httpkit - without callbacks (standard Promise behavior)', async () => {
 
   mockFetch.mockResolvedValueOnce(mockResponse);
 
-  const result = await get('/api/users/1', { schemas: { success: UserSchema } });
+  const result = await get('/api/users/1', {
+    schemas: { success: UserSchema },
+  });
 
   expect(result).toEqual({ id: 1, name: 'John', email: 'john@example.com' });
 });

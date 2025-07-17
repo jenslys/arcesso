@@ -159,13 +159,17 @@ test('error schema validation - POST request with error schema', async () => {
 
   mockFetch.mockResolvedValueOnce(mockResponse);
 
-  const result = await post('/api/users', { invalid: 'data' }, {
-    schemas: { success: UserSchema, error: ErrorSchema },
-    onHttpError: (errorData) => {
-      expect(errorData).toEqual({ error: 'Validation failed', code: 400 });
-      return { created: false };
-    },
-  });
+  const result = await post(
+    '/api/users',
+    { invalid: 'data' },
+    {
+      schemas: { success: UserSchema, error: ErrorSchema },
+      onHttpError: (errorData) => {
+        expect(errorData).toEqual({ error: 'Validation failed', code: 400 });
+        return { created: false };
+      },
+    }
+  );
 
   expect(result as any).toEqual({ created: false });
 });

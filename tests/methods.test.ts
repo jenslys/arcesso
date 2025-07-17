@@ -94,7 +94,9 @@ test('post - with schema and automatic JSON handling', async () => {
   mockFetch.mockResolvedValueOnce(mockResponse);
 
   const userData = { name: 'Jane', email: 'jane@example.com' };
-  const user = await post('/users', userData, { schemas: { success: UserSchema } });
+  const user = await post('/users', userData, {
+    schemas: { success: UserSchema },
+  });
 
   expect(user).toEqual({ id: 2, name: 'Jane', email: 'jane@example.com' });
   expect(mockFetch).toHaveBeenCalledWith('/users', {
@@ -145,7 +147,9 @@ test('put - with schema and automatic JSON handling', async () => {
   mockFetch.mockResolvedValueOnce(mockResponse);
 
   const userData = { name: 'John Updated', email: 'john.updated@example.com' };
-  const user = await put('/users/1', userData, { schemas: { success: UserSchema } });
+  const user = await put('/users/1', userData, {
+    schemas: { success: UserSchema },
+  });
 
   expect(user).toEqual({
     id: 1,
@@ -198,7 +202,9 @@ test('patch - with schema and automatic JSON handling', async () => {
   mockFetch.mockResolvedValueOnce(mockResponse);
 
   const userData = { name: 'John Patched' };
-  const user = await patch('/users/1', userData, { schemas: { success: UserSchema } });
+  const user = await patch('/users/1', userData, {
+    schemas: { success: UserSchema },
+  });
 
   expect(user).toEqual({
     id: 1,
@@ -311,7 +317,9 @@ test('works with Valibot schema', async () => {
 
   mockFetch.mockResolvedValueOnce(mockResponse);
 
-  const user = await get('/users/1', { schemas: { success: ValibotUserSchema } });
+  const user = await get('/users/1', {
+    schemas: { success: ValibotUserSchema },
+  });
 
   expect(user).toEqual({ id: 1, name: 'John', email: 'john@example.com' });
 });

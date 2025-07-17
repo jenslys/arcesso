@@ -180,14 +180,26 @@ async function executeHttpRequestWithCallbacks<
         : await response.json();
 
       if (options.onSuccess) {
-        return (await executeCallback(options.onSuccess, data as InferOutput<TSuccess>)) as TSuccess extends StandardSchemaV1 ? InferOutput<TSuccess> : unknown;
+        return (await executeCallback(
+          options.onSuccess,
+          data as InferOutput<TSuccess>
+        )) as TSuccess extends StandardSchemaV1
+          ? InferOutput<TSuccess>
+          : unknown;
       }
 
-      return data as TSuccess extends StandardSchemaV1 ? InferOutput<TSuccess> : unknown;
+      return data as TSuccess extends StandardSchemaV1
+        ? InferOutput<TSuccess>
+        : unknown;
     } catch (error) {
       if (error instanceof ValidationError) {
         if (options.onValidationError) {
-          return (await executeCallback(options.onValidationError, error)) as TSuccess extends StandardSchemaV1 ? InferOutput<TSuccess> : unknown;
+          return (await executeCallback(
+            options.onValidationError,
+            error
+          )) as TSuccess extends StandardSchemaV1
+            ? InferOutput<TSuccess>
+            : unknown;
         }
         throw error;
       }
@@ -204,19 +216,31 @@ async function executeHttpRequestWithCallbacks<
     if (error instanceof HttpError && options.onHttpError) {
       const callbackInput =
         error.data !== undefined ? error.data : error.response;
-      return (await executeCallback(options.onHttpError, callbackInput as InferOutput<TError>)) as TSuccess extends StandardSchemaV1 ? InferOutput<TSuccess> : unknown;
+      return (await executeCallback(
+        options.onHttpError,
+        callbackInput as InferOutput<TError>
+      )) as TSuccess extends StandardSchemaV1 ? InferOutput<TSuccess> : unknown;
     }
 
     if (error instanceof NetworkError && options.onNetworkError) {
-      return (await executeCallback(options.onNetworkError, error)) as TSuccess extends StandardSchemaV1 ? InferOutput<TSuccess> : unknown;
+      return (await executeCallback(
+        options.onNetworkError,
+        error
+      )) as TSuccess extends StandardSchemaV1 ? InferOutput<TSuccess> : unknown;
     }
 
     if (error instanceof TimeoutError && options.onTimeout) {
-      return (await executeCallback(options.onTimeout, error)) as TSuccess extends StandardSchemaV1 ? InferOutput<TSuccess> : unknown;
+      return (await executeCallback(
+        options.onTimeout,
+        error
+      )) as TSuccess extends StandardSchemaV1 ? InferOutput<TSuccess> : unknown;
     }
 
     if (options.onError) {
-      return (await executeCallback(options.onError, error as Error)) as TSuccess extends StandardSchemaV1 ? InferOutput<TSuccess> : unknown;
+      return (await executeCallback(
+        options.onError,
+        error as Error
+      )) as TSuccess extends StandardSchemaV1 ? InferOutput<TSuccess> : unknown;
     }
 
     throw error;
@@ -233,7 +257,9 @@ async function executeRequest<
   body: unknown,
   options: ArcessoRequestOptions<TInput, TSuccess, TError> = {}
 ): Promise<InferOutput<TSuccess>> {
-  return executeHttpRequestWithCallbacks(method, url, body, options) as Promise<InferOutput<TSuccess>>;
+  return executeHttpRequestWithCallbacks(method, url, body, options) as Promise<
+    InferOutput<TSuccess>
+  >;
 }
 
 async function executeRequestWithoutSchema<
