@@ -1,6 +1,11 @@
+import {
+  HttpError,
+  NetworkError,
+  TimeoutError,
+  ValidationError,
+} from './errors.js';
 import { EnhancedResponse } from './response.js';
-import { NetworkError, HttpError, TimeoutError, ValidationError } from './errors.js';
-import { withRetry, type RetryOptions } from './retry.js';
+import { type RetryOptions, withRetry } from './retry.js';
 
 export interface CoreHttpOptions {
   method: string;
@@ -18,14 +23,7 @@ export async function executeHttpRequest(
   url: string,
   options: CoreHttpOptions
 ): Promise<EnhancedResponse> {
-  const {
-    method,
-    body,
-    headers,
-    retry,
-    timeout,
-    errorSchema,
-  } = options;
+  const { method, body, headers, retry, timeout, errorSchema } = options;
 
   const fetchWithRetry = async (): Promise<EnhancedResponse> => {
     try {
@@ -89,7 +87,11 @@ export async function executeHttpRequest(
       }
 
       // Handle timeout errors (from AbortSignal.timeout)
-      if (error instanceof Error && (error.name === 'TimeoutError' || (error.name === 'AbortError' && timeout))) {
+      if (
+        error instanceof Error &&
+        (error.name === 'TimeoutError' ||
+          (error.name === 'AbortError' && timeout))
+      ) {
         const timeoutError = new TimeoutError(
           `Request timed out after ${timeout}ms`,
           timeout || 0
@@ -106,7 +108,7 @@ export async function executeHttpRequest(
     }
   };
 
-  const response = retry 
+  const response = retry
     ? await withRetry(fetchWithRetry, retry)
     : await fetchWithRetry();
 

@@ -1,6 +1,12 @@
-import { test, expect, mock } from 'bun:test';
-import { get, post, ValidationError, NetworkError, HttpError } from '../src/index.js';
-import { type StandardSchemaV1 } from '../src/types.js';
+import { expect, mock, test } from 'bun:test';
+import {
+  get,
+  HttpError,
+  NetworkError,
+  post,
+  ValidationError,
+} from '../src/index.js';
+import type { StandardSchemaV1 } from '../src/types.js';
 
 // Mock fetch globally
 const mockFetch = mock();
@@ -12,30 +18,33 @@ function resetMocks() {
 }
 
 // Mock Standard Schema for testing
-const UserSchema: StandardSchemaV1<unknown, { id: number; name: string; email: string }> = {
+const UserSchema: StandardSchemaV1<
+  unknown,
+  { id: number; name: string; email: string }
+> = {
   '~standard': {
     version: 1,
     vendor: 'test',
     validate: (value: unknown) => {
       const data = value as any;
-      
+
       // Basic validation logic for testing
       if (typeof data !== 'object' || data === null) {
         return { issues: [{ message: 'Expected object' }] };
       }
-      
+
       if (typeof data.id !== 'number') {
         return { issues: [{ message: 'Expected id to be number' }] };
       }
-      
+
       if (typeof data.name !== 'string') {
         return { issues: [{ message: 'Expected name to be string' }] };
       }
-      
+
       if (typeof data.email !== 'string' || !data.email.includes('@')) {
         return { issues: [{ message: 'Expected email to be valid email' }] };
       }
-      
+
       return { value: { id: data.id, name: data.name, email: data.email } };
     },
   },
@@ -45,10 +54,10 @@ test('httpkit - basic successful request', async () => {
   resetMocks();
   const mockResponse = new Response(
     JSON.stringify({ id: 1, name: 'John', email: 'john@example.com' }),
-    { 
+    {
       status: 200,
       statusText: 'OK',
-      headers: { 'Content-Type': 'application/json' }
+      headers: { 'Content-Type': 'application/json' },
     }
   );
 
@@ -68,10 +77,10 @@ test('httpkit - validation error handling', async () => {
   resetMocks();
   const mockResponse = new Response(
     JSON.stringify({ id: 'invalid', name: 'John' }), // missing email, invalid id
-    { 
+    {
       status: 200,
       statusText: 'OK',
-      headers: { 'Content-Type': 'application/json' }
+      headers: { 'Content-Type': 'application/json' },
     }
   );
 
@@ -104,14 +113,11 @@ test('httpkit - network error handling', async () => {
 
 test('httpkit - HTTP error handling', async () => {
   resetMocks();
-  const mockResponse = new Response(
-    JSON.stringify({}),
-    { 
-      status: 404,
-      statusText: 'Not Found',
-      headers: { 'Content-Type': 'application/json' }
-    }
-  );
+  const mockResponse = new Response(JSON.stringify({}), {
+    status: 404,
+    statusText: 'Not Found',
+    headers: { 'Content-Type': 'application/json' },
+  });
 
   mockFetch.mockResolvedValueOnce(mockResponse);
 
@@ -127,32 +133,26 @@ test('httpkit - HTTP error handling', async () => {
 
 test('httpkit - retry logic', async () => {
   resetMocks();
-  
-  // Create fresh Response objects for each call to avoid body stream issues
-  const errorResponse1 = new Response(
-    JSON.stringify({}),
-    { 
-      status: 500,
-      statusText: 'Internal Server Error',
-      headers: { 'Content-Type': 'application/json' }
-    }
-  );
 
-  const errorResponse2 = new Response(
-    JSON.stringify({}),
-    { 
-      status: 500,
-      statusText: 'Internal Server Error',
-      headers: { 'Content-Type': 'application/json' }
-    }
-  );
+  // Create fresh Response objects for each call to avoid body stream issues
+  const errorResponse1 = new Response(JSON.stringify({}), {
+    status: 500,
+    statusText: 'Internal Server Error',
+    headers: { 'Content-Type': 'application/json' },
+  });
+
+  const errorResponse2 = new Response(JSON.stringify({}), {
+    status: 500,
+    statusText: 'Internal Server Error',
+    headers: { 'Content-Type': 'application/json' },
+  });
 
   const successResponse = new Response(
     JSON.stringify({ id: 1, name: 'John', email: 'john@example.com' }),
-    { 
+    {
       status: 200,
       statusText: 'OK',
-      headers: { 'Content-Type': 'application/json' }
+      headers: { 'Content-Type': 'application/json' },
     }
   );
 
@@ -185,10 +185,10 @@ test('httpkit - POST request with body', async () => {
   resetMocks();
   const mockResponse = new Response(
     JSON.stringify({ id: 2, name: 'Jane', email: 'jane@example.com' }),
-    { 
+    {
       status: 201,
       statusText: 'Created',
-      headers: { 'Content-Type': 'application/json' }
+      headers: { 'Content-Type': 'application/json' },
     }
   );
 
@@ -196,7 +196,7 @@ test('httpkit - POST request with body', async () => {
 
   const result = await post('/api/users', {
     body: { name: 'Jane', email: 'jane@example.com' },
-    schema: UserSchema
+    schema: UserSchema,
   });
 
   expect(result).toEqual({ id: 2, name: 'Jane', email: 'jane@example.com' });
@@ -211,10 +211,10 @@ test('httpkit - without callbacks (standard Promise behavior)', async () => {
   resetMocks();
   const mockResponse = new Response(
     JSON.stringify({ id: 1, name: 'John', email: 'john@example.com' }),
-    { 
+    {
       status: 200,
       statusText: 'OK',
-      headers: { 'Content-Type': 'application/json' }
+      headers: { 'Content-Type': 'application/json' },
     }
   );
 

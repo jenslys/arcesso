@@ -1,9 +1,8 @@
-import { test, expect, mock } from 'bun:test';
-import { z } from 'zod';
+import { expect, mock, test } from 'bun:test';
 import * as v from 'valibot';
-import { get, post } from '../src/methods.js';
+import { z } from 'zod';
 import { ValidationError } from '../src/errors.js';
-import { EnhancedResponse } from '../src/response.js';
+import { get, post } from '../src/methods.js';
 
 // Mock fetch globally
 const mockFetch = mock();
@@ -43,13 +42,13 @@ const ValibotErrorSchema = v.object({
 
 test('onSuccess with schema validation - valid result', async () => {
   resetMocks();
-  
+
   const mockResponse = new Response(
     JSON.stringify({ id: 1, name: 'John', email: 'john@example.com' }),
-    { 
+    {
       status: 200,
       statusText: 'OK',
-      headers: { 'Content-Type': 'application/json' }
+      headers: { 'Content-Type': 'application/json' },
     }
   );
 
@@ -61,14 +60,18 @@ test('onSuccess with schema validation - valid result', async () => {
       schema: ProcessedUserSchema,
       handler: (user) => {
         // user is typed as { id: number; name: string; email: string; }
-        expect(user).toEqual({ id: 1, name: 'John', email: 'john@example.com' });
+        expect(user).toEqual({
+          id: 1,
+          name: 'John',
+          email: 'john@example.com',
+        });
         return {
           ...user,
           processed: true,
-          timestamp: 1234567890
+          timestamp: 1234567890,
         };
-      }
-    }
+      },
+    },
   });
 
   expect(result).toEqual({
@@ -76,19 +79,19 @@ test('onSuccess with schema validation - valid result', async () => {
     name: 'John',
     email: 'john@example.com',
     processed: true,
-    timestamp: 1234567890
+    timestamp: 1234567890,
   });
 });
 
 test('onSuccess with schema validation - invalid result throws ValidationError', async () => {
   resetMocks();
-  
+
   const mockResponse = new Response(
     JSON.stringify({ id: 1, name: 'John', email: 'john@example.com' }),
-    { 
+    {
       status: 200,
       statusText: 'OK',
-      headers: { 'Content-Type': 'application/json' }
+      headers: { 'Content-Type': 'application/json' },
     }
   );
 
@@ -106,10 +109,10 @@ test('onSuccess with schema validation - invalid result throws ValidationError',
             processed: 'invalid', // Should be boolean
             // Missing required timestamp field
           };
-        }
-      }
+        },
+      },
     });
-    
+
     console.log('Result:', result);
     expect.unreachable('Should have thrown ValidationError');
   } catch (error) {
@@ -121,7 +124,7 @@ test('onSuccess with schema validation - invalid result throws ValidationError',
 
 test('onError with schema validation - valid result', async () => {
   resetMocks();
-  
+
   mockFetch.mockRejectedValueOnce(new Error('Network failure'));
 
   const result = await get('/users/1', {
@@ -133,26 +136,26 @@ test('onError with schema validation - valid result', async () => {
         return {
           error: 'request_failed',
           message: 'Network failure',
-          code: 'NETWORK_ERROR'
+          code: 'NETWORK_ERROR',
         };
-      }
-    }
+      },
+    },
   });
 
   expect(result).toEqual({
     error: 'request_failed',
     message: 'Network failure',
-    code: 'NETWORK_ERROR'
+    code: 'NETWORK_ERROR',
   });
 });
 
 test('onError with schema validation - invalid result throws ValidationError', async () => {
   resetMocks();
-  
+
   mockFetch.mockRejectedValueOnce(new Error('Network failure'));
 
   try {
-    const result = await get('/users/1', {
+    const _result = await get('/users/1', {
       schema: UserSchema,
       onError: {
         schema: ErrorResponseSchema,
@@ -163,10 +166,10 @@ test('onError with schema validation - invalid result throws ValidationError', a
             message: error.message,
             // Missing required 'code' field
           };
-        }
-      }
+        },
+      },
     });
-    
+
     expect.unreachable('Should have thrown ValidationError');
   } catch (error) {
     expect(error).toBeInstanceOf(ValidationError);
@@ -176,7 +179,7 @@ test('onError with schema validation - invalid result throws ValidationError', a
 
 test('onNetworkError with Valibot schema validation', async () => {
   resetMocks();
-  
+
   mockFetch.mockRejectedValueOnce(new Error('Connection timeout'));
 
   const result = await get('/users/1', {
@@ -187,28 +190,28 @@ test('onNetworkError with Valibot schema validation', async () => {
         return {
           type: 'network_error',
           details: error.message,
-          handled: true
+          handled: true,
         };
-      }
-    }
+      },
+    },
   });
 
   expect(result).toEqual({
     type: 'network_error',
     details: 'Network error: Connection timeout',
-    handled: true
+    handled: true,
   });
 });
 
 test('onValidationError with schema validation', async () => {
   resetMocks();
-  
+
   const mockResponse = new Response(
     JSON.stringify({ id: 'invalid', name: 'John' }), // Invalid data
-    { 
+    {
       status: 200,
       statusText: 'OK',
-      headers: { 'Content-Type': 'application/json' }
+      headers: { 'Content-Type': 'application/json' },
     }
   );
 
@@ -223,30 +226,27 @@ test('onValidationError with schema validation', async () => {
         return {
           error: 'validation_failed',
           message: error.message,
-          code: 'SCHEMA_ERROR'
+          code: 'SCHEMA_ERROR',
         };
-      }
-    }
+      },
+    },
   });
 
   expect(result).toEqual({
     error: 'validation_failed',
     message: expect.stringContaining('validation failed'),
-    code: 'SCHEMA_ERROR'
+    code: 'SCHEMA_ERROR',
   });
 });
 
 test('onHttpError with schema validation', async () => {
   resetMocks();
-  
-  const mockResponse = new Response(
-    JSON.stringify({ error: 'Not found' }),
-    { 
-      status: 404,
-      statusText: 'Not Found',
-      headers: { 'Content-Type': 'application/json' }
-    }
-  );
+
+  const mockResponse = new Response(JSON.stringify({ error: 'Not found' }), {
+    status: 404,
+    statusText: 'Not Found',
+    headers: { 'Content-Type': 'application/json' },
+  });
 
   mockFetch.mockResolvedValueOnce(mockResponse);
 
@@ -259,28 +259,28 @@ test('onHttpError with schema validation', async () => {
         return {
           error: 'http_error',
           message: `HTTP ${response.status}: ${response.statusText}`,
-          code: 'HTTP_404'
+          code: 'HTTP_404',
         };
-      }
-    }
+      },
+    },
   });
 
   expect(result).toEqual({
     error: 'http_error',
     message: 'HTTP 404: Not Found',
-    code: 'HTTP_404'
+    code: 'HTTP_404',
   });
 });
 
 test('mixed callbacks - some with schema, some without', async () => {
   resetMocks();
-  
+
   const mockResponse = new Response(
     JSON.stringify({ id: 1, name: 'John', email: 'john@example.com' }),
-    { 
+    {
       status: 200,
       statusText: 'OK',
-      headers: { 'Content-Type': 'application/json' }
+      headers: { 'Content-Type': 'application/json' },
     }
   );
 
@@ -293,13 +293,13 @@ test('mixed callbacks - some with schema, some without', async () => {
       handler: (user) => ({
         ...user,
         processed: true,
-        timestamp: 1234567890
-      })
+        timestamp: 1234567890,
+      }),
     },
     onError: (error) => {
       // Simple callback without schema validation
       return { simpleError: error.message };
-    }
+    },
   });
 
   expect(result).toEqual({
@@ -307,19 +307,19 @@ test('mixed callbacks - some with schema, some without', async () => {
     name: 'John',
     email: 'john@example.com',
     processed: true,
-    timestamp: 1234567890
+    timestamp: 1234567890,
   });
 });
 
 test('POST request with callback schema validation', async () => {
   resetMocks();
-  
+
   const mockResponse = new Response(
     JSON.stringify({ id: 2, name: 'Jane', email: 'jane@example.com' }),
-    { 
+    {
       status: 201,
       statusText: 'Created',
-      headers: { 'Content-Type': 'application/json' }
+      headers: { 'Content-Type': 'application/json' },
     }
   );
 
@@ -334,9 +334,9 @@ test('POST request with callback schema validation', async () => {
       handler: (user) => ({
         ...user,
         processed: true,
-        timestamp: Date.now()
-      })
-    }
+        timestamp: Date.now(),
+      }),
+    },
   });
 
   expect(result).toEqual({
@@ -344,19 +344,19 @@ test('POST request with callback schema validation', async () => {
     name: 'Jane',
     email: 'jane@example.com',
     processed: true,
-    timestamp: expect.any(Number)
+    timestamp: expect.any(Number),
   });
 });
 
 test('callback without schema validation works as before', async () => {
   resetMocks();
-  
+
   const mockResponse = new Response(
     JSON.stringify({ id: 1, name: 'John', email: 'john@example.com' }),
-    { 
+    {
       status: 200,
       statusText: 'OK',
-      headers: { 'Content-Type': 'application/json' }
+      headers: { 'Content-Type': 'application/json' },
     }
   );
 
@@ -367,26 +367,26 @@ test('callback without schema validation works as before', async () => {
     onSuccess: (user) => {
       // Simple callback without schema validation
       return { ...user, legacy: true };
-    }
+    },
   });
 
   expect(result).toEqual({
     id: 1,
     name: 'John',
     email: 'john@example.com',
-    legacy: true
+    legacy: true,
   });
 });
 
 test('async callback handlers are supported', async () => {
   resetMocks();
-  
+
   const mockResponse = new Response(
     JSON.stringify({ id: 1, name: 'John', email: 'john@example.com' }),
-    { 
+    {
       status: 200,
       statusText: 'OK',
-      headers: { 'Content-Type': 'application/json' }
+      headers: { 'Content-Type': 'application/json' },
     }
   );
 
@@ -398,14 +398,14 @@ test('async callback handlers are supported', async () => {
       schema: ProcessedUserSchema,
       handler: async (user) => {
         // Simulate async operation
-        await new Promise(resolve => setTimeout(resolve, 1));
+        await new Promise((resolve) => setTimeout(resolve, 1));
         return {
           ...user,
           processed: true,
-          timestamp: 1234567890
+          timestamp: 1234567890,
         };
-      }
-    }
+      },
+    },
   });
 
   expect(result).toEqual({
@@ -413,6 +413,6 @@ test('async callback handlers are supported', async () => {
     name: 'John',
     email: 'john@example.com',
     processed: true,
-    timestamp: 1234567890
+    timestamp: 1234567890,
   });
 });

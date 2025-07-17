@@ -1,8 +1,18 @@
-import { type StandardSchemaV1 } from './types.js';
-import { type HttpKitRequestOptions, type InferOutput, type InferInput, type HttpKitConfig, type AuthOptions } from './types.js';
-import { executeHttpRequest } from './core.js';
 import { executeCallback } from './callback-validator.js';
-import { ValidationError, NetworkError, HttpError, TimeoutError } from './errors.js';
+import { executeHttpRequest } from './core.js';
+import {
+  HttpError,
+  NetworkError,
+  TimeoutError,
+  ValidationError,
+} from './errors.js';
+import type {
+  AuthOptions,
+  HttpKitConfig,
+  HttpKitRequestOptions,
+  InferOutput,
+  StandardSchemaV1,
+} from './types.js';
 
 // Global configuration
 let globalConfig: HttpKitConfig = {};
@@ -28,9 +38,11 @@ function resolveUrl(url: string): string {
 /**
  * Helper function to merge headers with global headers
  */
-function mergeHeaders(headers?: Record<string, string> | Headers): Record<string, string> {
+function mergeHeaders(
+  headers?: Record<string, string> | Headers
+): Record<string, string> {
   const merged = { ...globalConfig.headers };
-  
+
   if (headers) {
     if (headers instanceof Headers) {
       headers.forEach((value, key) => {
@@ -40,30 +52,38 @@ function mergeHeaders(headers?: Record<string, string> | Headers): Record<string
       Object.assign(merged, headers);
     }
   }
-  
+
   return merged;
 }
 
 /**
  * Helper function to automatically handle JSON serialization
  */
-function prepareBody(body: unknown): { body: string | FormData | Blob | ArrayBuffer | ReadableStream; headers: Record<string, string> } {
+function prepareBody(body: unknown): {
+  body: string | FormData | Blob | ArrayBuffer | ReadableStream;
+  headers: Record<string, string>;
+} {
   if (body === null || body === undefined) {
     return { body: '', headers: {} };
   }
-  
+
   if (typeof body === 'string') {
     return { body, headers: {} };
   }
-  
-  if (body instanceof FormData || body instanceof Blob || body instanceof ArrayBuffer || body instanceof ReadableStream) {
+
+  if (
+    body instanceof FormData ||
+    body instanceof Blob ||
+    body instanceof ArrayBuffer ||
+    body instanceof ReadableStream
+  ) {
     return { body, headers: {} };
   }
-  
+
   // Auto-stringify objects to JSON
   return {
     body: JSON.stringify(body),
-    headers: { 'Content-Type': 'application/json' }
+    headers: { 'Content-Type': 'application/json' },
   };
 }
 
@@ -72,7 +92,7 @@ function prepareBody(body: unknown): { body: string | FormData | Blob | ArrayBuf
  */
 function prepareAuthHeaders(auth: AuthOptions): Record<string, string> {
   const headers: Record<string, string> = {};
-  
+
   if (auth.bearer) {
     headers.Authorization = `Bearer ${auth.bearer}`;
   } else if (auth.apiKey) {
@@ -81,48 +101,57 @@ function prepareAuthHeaders(auth: AuthOptions): Record<string, string> {
     const encoded = btoa(`${auth.basic.username}:${auth.basic.password}`);
     headers.Authorization = `Basic ${encoded}`;
   }
-  
+
   return headers;
 }
 
 /**
  * Prepare query parameters and append to URL
  */
-function prepareUrl(url: string, query?: Record<string, string | number | boolean | null | undefined>): string {
+function prepareUrl(
+  url: string,
+  query?: Record<string, string | number | boolean | null | undefined>
+): string {
   if (!query) {
     return url;
   }
-  
+
   const params = new URLSearchParams();
-  
+
   for (const [key, value] of Object.entries(query)) {
     if (value !== null && value !== undefined) {
       params.append(key, String(value));
     }
   }
-  
+
   const queryString = params.toString();
   if (queryString) {
     const separator = url.includes('?') ? '&' : '?';
     return `${url}${separator}${queryString}`;
   }
-  
+
   return url;
 }
 
 /**
  * Internal function to execute HTTP requests with unified logic
  */
-async function executeHttpRequestWithCallbacks<TInput extends StandardSchemaV1, TSuccess extends StandardSchemaV1, TError extends StandardSchemaV1>(
+async function executeHttpRequestWithCallbacks<
+  TInput extends StandardSchemaV1,
+  TSuccess extends StandardSchemaV1,
+  TError extends StandardSchemaV1,
+>(
   method: string,
   url: string,
   body: unknown,
   options: HttpKitRequestOptions<TInput, TSuccess, TError> = {}
-): Promise<TSuccess extends StandardSchemaV1 ? InferOutput<TSuccess> : unknown> {
+): Promise<
+  TSuccess extends StandardSchemaV1 ? InferOutput<TSuccess> : unknown
+> {
   // Prepare URL with query parameters
   const baseUrl = resolveUrl(url);
   const finalUrl = prepareUrl(baseUrl, options.query);
-  
+
   // Validate input body if schema is provided
   let validatedBody = body;
   if (options.schemas?.input && body !== undefined && body !== null) {
@@ -138,12 +167,17 @@ async function executeHttpRequestWithCallbacks<TInput extends StandardSchemaV1, 
       throw new ValidationError('Unknown input validation error', []);
     }
   }
-  
+
   // Prepare headers from different sources
-  const { body: preparedBody, headers: bodyHeaders } = prepareBody(validatedBody);
+  const { body: preparedBody, headers: bodyHeaders } =
+    prepareBody(validatedBody);
   const authHeaders = options.auth ? prepareAuthHeaders(options.auth) : {};
-  const mergedHeaders = mergeHeaders({ ...bodyHeaders, ...authHeaders, ...options.headers });
-  
+  const mergedHeaders = mergeHeaders({
+    ...bodyHeaders,
+    ...authHeaders,
+    ...options.headers,
+  });
+
   try {
     const response = await executeHttpRequest(finalUrl, {
       method,
@@ -155,12 +189,14 @@ async function executeHttpRequestWithCallbacks<TInput extends StandardSchemaV1, 
     });
 
     try {
-      const data = options.schemas?.success ? await response.json(options.schemas.success) : await response.json();
-      
+      const data = options.schemas?.success
+        ? await response.json(options.schemas.success)
+        : await response.json();
+
       if (options.onSuccess) {
         return await executeCallback(options.onSuccess, data);
       }
-      
+
       return data;
     } catch (error) {
       if (error instanceof ValidationError) {
@@ -172,13 +208,17 @@ async function executeHttpRequestWithCallbacks<TInput extends StandardSchemaV1, 
       throw error;
     }
   } catch (error) {
-    if (error instanceof ValidationError && error.message.includes('Callback result validation failed')) {
+    if (
+      error instanceof ValidationError &&
+      error.message.includes('Callback result validation failed')
+    ) {
       throw error;
     }
 
     if (error instanceof HttpError && options.onHttpError) {
       // If we have validated error data, pass it to the callback, otherwise pass the response
-      const callbackInput = error.data !== undefined ? error.data : error.response;
+      const callbackInput =
+        error.data !== undefined ? error.data : error.response;
       return await executeCallback(options.onHttpError, callbackInput);
     }
 
@@ -201,7 +241,11 @@ async function executeHttpRequestWithCallbacks<TInput extends StandardSchemaV1, 
 /**
  * Internal function to execute HTTP requests with type safety
  */
-async function executeRequest<TInput extends StandardSchemaV1, TSuccess extends StandardSchemaV1, TError extends StandardSchemaV1>(
+async function executeRequest<
+  TInput extends StandardSchemaV1,
+  TSuccess extends StandardSchemaV1,
+  TError extends StandardSchemaV1,
+>(
   method: string,
   url: string,
   body: unknown,
@@ -213,7 +257,10 @@ async function executeRequest<TInput extends StandardSchemaV1, TSuccess extends 
 /**
  * Internal function to execute HTTP requests without schema validation
  */
-async function executeRequestWithoutSchema<TInput extends StandardSchemaV1, TError extends StandardSchemaV1>(
+async function executeRequestWithoutSchema<
+  TInput extends StandardSchemaV1,
+  TError extends StandardSchemaV1,
+>(
   method: string,
   url: string,
   body: unknown,
@@ -228,9 +275,15 @@ async function executeRequestWithoutSchema<TInput extends StandardSchemaV1, TErr
  * @param options - Request options including schemas and callbacks
  * @returns Promise resolving to the response data
  */
-function get<TInput extends StandardSchemaV1, TSuccess extends StandardSchemaV1, TError extends StandardSchemaV1>(
+function get<
+  TInput extends StandardSchemaV1,
+  TSuccess extends StandardSchemaV1,
+  TError extends StandardSchemaV1,
+>(
   url: string,
-  options: HttpKitRequestOptions<TInput, TSuccess, TError> & { schemas: { success: TSuccess } }
+  options: HttpKitRequestOptions<TInput, TSuccess, TError> & {
+    schemas: { success: TSuccess };
+  }
 ): Promise<InferOutput<TSuccess>>;
 
 function get<TInput extends StandardSchemaV1, TError extends StandardSchemaV1>(
@@ -238,7 +291,11 @@ function get<TInput extends StandardSchemaV1, TError extends StandardSchemaV1>(
   options?: HttpKitRequestOptions<TInput, StandardSchemaV1, TError>
 ): Promise<unknown>;
 
-function get<TInput extends StandardSchemaV1, TSuccess extends StandardSchemaV1, TError extends StandardSchemaV1>(
+function get<
+  TInput extends StandardSchemaV1,
+  TSuccess extends StandardSchemaV1,
+  TError extends StandardSchemaV1,
+>(
   url: string,
   options: HttpKitRequestOptions<TInput, TSuccess, TError> = {}
 ): Promise<InferOutput<TSuccess> | unknown> {
@@ -256,10 +313,16 @@ function get<TInput extends StandardSchemaV1, TSuccess extends StandardSchemaV1,
  * @param options - Request options including schemas and callbacks
  * @returns Promise resolving to the response data
  */
-function post<TInput extends StandardSchemaV1, TSuccess extends StandardSchemaV1, TError extends StandardSchemaV1>(
+function post<
+  TInput extends StandardSchemaV1,
+  TSuccess extends StandardSchemaV1,
+  TError extends StandardSchemaV1,
+>(
   url: string,
   body: unknown,
-  options: HttpKitRequestOptions<TInput, TSuccess, TError> & { schemas: { success: TSuccess } }
+  options: HttpKitRequestOptions<TInput, TSuccess, TError> & {
+    schemas: { success: TSuccess };
+  }
 ): Promise<InferOutput<TSuccess>>;
 
 function post<TInput extends StandardSchemaV1, TError extends StandardSchemaV1>(
@@ -268,7 +331,11 @@ function post<TInput extends StandardSchemaV1, TError extends StandardSchemaV1>(
   options?: HttpKitRequestOptions<TInput, StandardSchemaV1, TError>
 ): Promise<unknown>;
 
-function post<TInput extends StandardSchemaV1, TSuccess extends StandardSchemaV1, TError extends StandardSchemaV1>(
+function post<
+  TInput extends StandardSchemaV1,
+  TSuccess extends StandardSchemaV1,
+  TError extends StandardSchemaV1,
+>(
   url: string,
   body: unknown = undefined,
   options: HttpKitRequestOptions<TInput, TSuccess, TError> = {}
@@ -283,10 +350,16 @@ function post<TInput extends StandardSchemaV1, TSuccess extends StandardSchemaV1
 /**
  * PUT request with automatic JSON handling and type safety
  */
-function put<TInput extends StandardSchemaV1, TSuccess extends StandardSchemaV1, TError extends StandardSchemaV1>(
+function put<
+  TInput extends StandardSchemaV1,
+  TSuccess extends StandardSchemaV1,
+  TError extends StandardSchemaV1,
+>(
   url: string,
   body: unknown,
-  options: HttpKitRequestOptions<TInput, TSuccess, TError> & { schemas: { success: TSuccess } }
+  options: HttpKitRequestOptions<TInput, TSuccess, TError> & {
+    schemas: { success: TSuccess };
+  }
 ): Promise<InferOutput<TSuccess>>;
 
 function put<TInput extends StandardSchemaV1, TError extends StandardSchemaV1>(
@@ -295,7 +368,11 @@ function put<TInput extends StandardSchemaV1, TError extends StandardSchemaV1>(
   options?: HttpKitRequestOptions<TInput, StandardSchemaV1, TError>
 ): Promise<unknown>;
 
-function put<TInput extends StandardSchemaV1, TSuccess extends StandardSchemaV1, TError extends StandardSchemaV1>(
+function put<
+  TInput extends StandardSchemaV1,
+  TSuccess extends StandardSchemaV1,
+  TError extends StandardSchemaV1,
+>(
   url: string,
   body: unknown = undefined,
   options: HttpKitRequestOptions<TInput, TSuccess, TError> = {}
@@ -310,9 +387,15 @@ function put<TInput extends StandardSchemaV1, TSuccess extends StandardSchemaV1,
 /**
  * DELETE request
  */
-function del<TInput extends StandardSchemaV1, TSuccess extends StandardSchemaV1, TError extends StandardSchemaV1>(
+function del<
+  TInput extends StandardSchemaV1,
+  TSuccess extends StandardSchemaV1,
+  TError extends StandardSchemaV1,
+>(
   url: string,
-  options: HttpKitRequestOptions<TInput, TSuccess, TError> & { schemas: { success: TSuccess } }
+  options: HttpKitRequestOptions<TInput, TSuccess, TError> & {
+    schemas: { success: TSuccess };
+  }
 ): Promise<InferOutput<TSuccess>>;
 
 function del<TInput extends StandardSchemaV1, TError extends StandardSchemaV1>(
@@ -320,7 +403,11 @@ function del<TInput extends StandardSchemaV1, TError extends StandardSchemaV1>(
   options?: HttpKitRequestOptions<TInput, StandardSchemaV1, TError>
 ): Promise<unknown>;
 
-function del<TInput extends StandardSchemaV1, TSuccess extends StandardSchemaV1, TError extends StandardSchemaV1>(
+function del<
+  TInput extends StandardSchemaV1,
+  TSuccess extends StandardSchemaV1,
+  TError extends StandardSchemaV1,
+>(
   url: string,
   options: HttpKitRequestOptions<TInput, TSuccess, TError> = {}
 ): Promise<InferOutput<TSuccess> | unknown> {
@@ -334,19 +421,32 @@ function del<TInput extends StandardSchemaV1, TSuccess extends StandardSchemaV1,
 /**
  * PATCH request with automatic JSON handling and type safety
  */
-function patch<TInput extends StandardSchemaV1, TSuccess extends StandardSchemaV1, TError extends StandardSchemaV1>(
+function patch<
+  TInput extends StandardSchemaV1,
+  TSuccess extends StandardSchemaV1,
+  TError extends StandardSchemaV1,
+>(
   url: string,
   body: unknown,
-  options: HttpKitRequestOptions<TInput, TSuccess, TError> & { schemas: { success: TSuccess } }
+  options: HttpKitRequestOptions<TInput, TSuccess, TError> & {
+    schemas: { success: TSuccess };
+  }
 ): Promise<InferOutput<TSuccess>>;
 
-function patch<TInput extends StandardSchemaV1, TError extends StandardSchemaV1>(
+function patch<
+  TInput extends StandardSchemaV1,
+  TError extends StandardSchemaV1,
+>(
   url: string,
   body?: unknown,
   options?: HttpKitRequestOptions<TInput, StandardSchemaV1, TError>
 ): Promise<unknown>;
 
-function patch<TInput extends StandardSchemaV1, TSuccess extends StandardSchemaV1, TError extends StandardSchemaV1>(
+function patch<
+  TInput extends StandardSchemaV1,
+  TSuccess extends StandardSchemaV1,
+  TError extends StandardSchemaV1,
+>(
   url: string,
   body: unknown = undefined,
   options: HttpKitRequestOptions<TInput, TSuccess, TError> = {}

@@ -1,6 +1,6 @@
-import { test, expect, mock } from 'bun:test';
-import { get, post, ValidationError, HttpError } from '../src/index.js';
-import { type StandardSchemaV1 } from '../src/types.js';
+import { expect, mock, test } from 'bun:test';
+import { get, HttpError, post } from '../src/index.js';
+import type { StandardSchemaV1 } from '../src/types.js';
 
 // Mock fetch globally
 const mockFetch = mock();
@@ -12,67 +12,71 @@ function resetMocks() {
 }
 
 // Mock Standard Schema for testing
-const UserSchema: StandardSchemaV1<unknown, { id: number; name: string; email: string }> = {
+const UserSchema: StandardSchemaV1<
+  unknown,
+  { id: number; name: string; email: string }
+> = {
   '~standard': {
     version: 1,
     vendor: 'test',
     validate: (value: unknown) => {
       const data = value as any;
-      
+
       if (typeof data !== 'object' || data === null) {
         return { issues: [{ message: 'Expected object' }] };
       }
-      
+
       if (typeof data.id !== 'number') {
         return { issues: [{ message: 'Expected id to be number' }] };
       }
-      
+
       if (typeof data.name !== 'string') {
         return { issues: [{ message: 'Expected name to be string' }] };
       }
-      
+
       if (typeof data.email !== 'string' || !data.email.includes('@')) {
         return { issues: [{ message: 'Expected email to be valid email' }] };
       }
-      
+
       return { value: { id: data.id, name: data.name, email: data.email } };
     },
   },
 };
 
 // Mock Error Schema for testing
-const ErrorSchema: StandardSchemaV1<unknown, { error: string; code: number }> = {
-  '~standard': {
-    version: 1,
-    vendor: 'test',
-    validate: (value: unknown) => {
-      const data = value as any;
-      
-      if (typeof data !== 'object' || data === null) {
-        return { issues: [{ message: 'Expected object' }] };
-      }
-      
-      if (typeof data.error !== 'string') {
-        return { issues: [{ message: 'Expected error to be string' }] };
-      }
-      
-      if (typeof data.code !== 'number') {
-        return { issues: [{ message: 'Expected code to be number' }] };
-      }
-      
-      return { value: { error: data.error, code: data.code } };
+const ErrorSchema: StandardSchemaV1<unknown, { error: string; code: number }> =
+  {
+    '~standard': {
+      version: 1,
+      vendor: 'test',
+      validate: (value: unknown) => {
+        const data = value as any;
+
+        if (typeof data !== 'object' || data === null) {
+          return { issues: [{ message: 'Expected object' }] };
+        }
+
+        if (typeof data.error !== 'string') {
+          return { issues: [{ message: 'Expected error to be string' }] };
+        }
+
+        if (typeof data.code !== 'number') {
+          return { issues: [{ message: 'Expected code to be number' }] };
+        }
+
+        return { value: { error: data.error, code: data.code } };
+      },
     },
-  },
-};
+  };
 
 test('error schema validation - valid error response', async () => {
   resetMocks();
   const mockResponse = new Response(
     JSON.stringify({ error: 'User not found', code: 404 }),
-    { 
+    {
       status: 404,
       statusText: 'Not Found',
-      headers: { 'Content-Type': 'application/json' }
+      headers: { 'Content-Type': 'application/json' },
     }
   );
 
@@ -95,10 +99,10 @@ test('error schema validation - invalid error response falls back to raw respons
   resetMocks();
   const mockResponse = new Response(
     JSON.stringify({ invalid: 'response' }), // doesn't match ErrorSchema
-    { 
+    {
       status: 500,
       statusText: 'Internal Server Error',
-      headers: { 'Content-Type': 'application/json' }
+      headers: { 'Content-Type': 'application/json' },
     }
   );
 
@@ -122,10 +126,10 @@ test('error schema validation - without error schema uses raw response', async (
   resetMocks();
   const mockResponse = new Response(
     JSON.stringify({ error: 'User not found', code: 404 }),
-    { 
+    {
       status: 404,
       statusText: 'Not Found',
-      headers: { 'Content-Type': 'application/json' }
+      headers: { 'Content-Type': 'application/json' },
     }
   );
 
@@ -148,10 +152,10 @@ test('error schema validation - POST request with error schema', async () => {
   resetMocks();
   const mockResponse = new Response(
     JSON.stringify({ error: 'Validation failed', code: 400 }),
-    { 
+    {
       status: 400,
       statusText: 'Bad Request',
-      headers: { 'Content-Type': 'application/json' }
+      headers: { 'Content-Type': 'application/json' },
     }
   );
 
@@ -174,10 +178,10 @@ test('error schema validation - HttpError contains validated data', async () => 
   resetMocks();
   const mockResponse = new Response(
     JSON.stringify({ error: 'Unauthorized', code: 401 }),
-    { 
+    {
       status: 401,
       statusText: 'Unauthorized',
-      headers: { 'Content-Type': 'application/json' }
+      headers: { 'Content-Type': 'application/json' },
     }
   );
 

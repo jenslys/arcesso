@@ -1,5 +1,5 @@
-import { type RetryOptions } from './types.js';
-import { NetworkError, HttpError, RetryExhaustedError } from './errors.js';
+import { HttpError, NetworkError, RetryExhaustedError } from './errors.js';
+import type { RetryOptions } from './types.js';
 
 /**
  * Default retry configuration
@@ -16,17 +16,20 @@ const DEFAULT_RETRY_OPTIONS: Required<RetryOptions> = {
 /**
  * Calculate delay for retry attempt
  */
-function calculateDelay(attempt: number, options: Required<RetryOptions>): number {
+function calculateDelay(
+  attempt: number,
+  options: Required<RetryOptions>
+): number {
   const { backoff, initialDelay, maxDelay } = options;
-  
+
   let delay: number;
-  
+
   if (backoff === 'exponential') {
-    delay = initialDelay * Math.pow(2, attempt - 1);
+    delay = initialDelay * 2 ** (attempt - 1);
   } else {
     delay = initialDelay * attempt;
   }
-  
+
   return Math.min(delay, maxDelay);
 }
 
@@ -37,11 +40,11 @@ function shouldRetry(error: Error, options: Required<RetryOptions>): boolean {
   if (error instanceof HttpError) {
     return options.retryOn.includes(error.status);
   }
-  
+
   if (error instanceof NetworkError) {
     return true;
   }
-  
+
   return false;
 }
 
@@ -49,7 +52,7 @@ function shouldRetry(error: Error, options: Required<RetryOptions>): boolean {
  * Sleep for specified milliseconds
  */
 function sleep(ms: number): Promise<void> {
-  return new Promise(resolve => setTimeout(resolve, ms));
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 /**
@@ -60,26 +63,26 @@ export async function withRetry<T>(
   retryOptions?: RetryOptions
 ): Promise<T> {
   const options = { ...DEFAULT_RETRY_OPTIONS, ...retryOptions };
-  
+
   let lastError: Error;
-  
+
   for (let attempt = 1; attempt <= options.attempts; attempt++) {
     try {
       return await fn();
     } catch (error) {
       lastError = error as Error;
-      
+
       if (attempt === options.attempts || !shouldRetry(lastError, options)) {
         throw lastError;
       }
-      
+
       options.onRetry(attempt, lastError);
-      
+
       const delay = calculateDelay(attempt, options);
       await sleep(delay);
     }
   }
-  
+
   throw new RetryExhaustedError(
     `Request failed after ${options.attempts} attempts`,
     options.attempts,

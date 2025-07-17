@@ -1,11 +1,10 @@
-import { type EnhancedResponse } from './response.js';
-import { type ValidationError, type NetworkError, type HttpError, type TimeoutError } from './errors.js';
+import type { NetworkError, TimeoutError, ValidationError } from './errors.js';
 
 // Local Standard Schema interface (zero dependencies!)
 /** The Standard Schema interface. */
 export interface StandardSchemaV1<Input = unknown, Output = Input> {
   /** The Standard Schema properties. */
-  readonly "~standard": StandardSchemaV1.Props<Input, Output>;
+  readonly '~standard': StandardSchemaV1.Props<Input, Output>;
 }
 
 export namespace StandardSchemaV1 {
@@ -16,7 +15,9 @@ export namespace StandardSchemaV1 {
     /** The vendor name of the schema library. */
     readonly vendor: string;
     /** Validates unknown input values. */
-    readonly validate: (value: unknown) => Result<Output> | Promise<Result<Output>>;
+    readonly validate: (
+      value: unknown
+    ) => Result<Output> | Promise<Result<Output>>;
     /** Inferred types associated with the schema. */
     readonly types?: Types<Input, Output> | undefined;
   }
@@ -61,19 +62,23 @@ export namespace StandardSchemaV1 {
   }
 
   /** Infers the input type of a Standard Schema. */
-  export type InferInput<Schema extends StandardSchemaV1> = NonNullable<Schema["~standard"]["types"]>["input"];
+  export type InferInput<Schema extends StandardSchemaV1> = NonNullable<
+    Schema['~standard']['types']
+  >['input'];
   /** Infers the output type of a Standard Schema. */
-  export type InferOutput<Schema extends StandardSchemaV1> = NonNullable<Schema["~standard"]["types"]>["output"];
+  export type InferOutput<Schema extends StandardSchemaV1> = NonNullable<
+    Schema['~standard']['types']
+  >['output'];
 }
 
 // Type helper to extract Output type from schema
-export type InferOutput<T> = T extends StandardSchemaV1<any, infer Output> 
-  ? Output 
+export type InferOutput<T> = T extends StandardSchemaV1<any, infer Output>
+  ? Output
   : never;
 
 // Type helper to extract Input type from schema
-export type InferInput<T> = T extends StandardSchemaV1<infer Input, any> 
-  ? Input 
+export type InferInput<T> = T extends StandardSchemaV1<infer Input, any>
+  ? Input
   : never;
 
 export interface RetryOptions {
@@ -95,15 +100,16 @@ export interface CallbackWithSchema<TInput, TSchema extends StandardSchemaV1> {
 export type SimpleCallback<TInput> = (input: TInput) => unknown;
 
 // Union type for callbacks that can optionally have schema validation
-export type CallbackOption<TInput, TSchema extends StandardSchemaV1 = StandardSchemaV1> = 
-  | SimpleCallback<TInput>
-  | CallbackWithSchema<TInput, TSchema>;
+export type CallbackOption<
+  TInput,
+  TSchema extends StandardSchemaV1 = StandardSchemaV1,
+> = SimpleCallback<TInput> | CallbackWithSchema<TInput, TSchema>;
 
 // Schema definitions for request/response validation
 export interface Schemas<
   TInput extends StandardSchemaV1 = StandardSchemaV1,
   TSuccess extends StandardSchemaV1 = StandardSchemaV1,
-  TError extends StandardSchemaV1 = StandardSchemaV1
+  TError extends StandardSchemaV1 = StandardSchemaV1,
 > {
   input?: TInput;
   success?: TSuccess;
@@ -124,7 +130,7 @@ export interface AuthOptions {
 export interface HttpKitRequestOptions<
   TInput extends StandardSchemaV1 = StandardSchemaV1,
   TSuccess extends StandardSchemaV1 = StandardSchemaV1,
-  TError extends StandardSchemaV1 = StandardSchemaV1
+  TError extends StandardSchemaV1 = StandardSchemaV1,
 > {
   schemas?: Schemas<TInput, TSuccess, TError>;
   auth?: AuthOptions;
@@ -140,7 +146,6 @@ export interface HttpKitRequestOptions<
   onTimeout?: CallbackOption<TimeoutError>;
 }
 
-
 // Global configuration interface
 export interface HttpKitConfig {
   baseUrl?: string;
@@ -148,4 +153,3 @@ export interface HttpKitConfig {
   retry?: RetryOptions;
   timeout?: number;
 }
-

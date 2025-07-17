@@ -1,5 +1,5 @@
-import { type StandardSchemaV1 } from './types.js';
 import { ValidationError } from './errors.js';
+import type { StandardSchemaV1 } from './types.js';
 
 /**
  * Enhanced Response class that wraps native Response with Standard Schema validation
@@ -14,17 +14,23 @@ export class EnhancedResponse {
   /**
    * Parse JSON with optional Standard Schema validation
    */
-  async json<T extends StandardSchemaV1>(schema?: T): Promise<T extends StandardSchemaV1<any, infer Output> ? Output : any> {
+  async json<T extends StandardSchemaV1>(
+    schema?: T
+  ): Promise<T extends StandardSchemaV1<any, infer Output> ? Output : any> {
     const data = await this._response.json();
-    
+
     if (!schema) {
-      return data as T extends StandardSchemaV1<any, infer Output> ? Output : any;
+      return data as T extends StandardSchemaV1<any, infer Output>
+        ? Output
+        : any;
     }
 
     const result = await schema['~standard'].validate(data);
-    
+
     if ('value' in result && result.value !== undefined && !result.issues) {
-      return result.value as T extends StandardSchemaV1<any, infer Output> ? Output : any;
+      return result.value as T extends StandardSchemaV1<any, infer Output>
+        ? Output
+        : any;
     }
 
     if ('issues' in result && result.issues) {

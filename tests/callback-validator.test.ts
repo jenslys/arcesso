@@ -1,4 +1,4 @@
-import { test, expect } from 'bun:test';
+import { expect, test } from 'bun:test';
 import { z } from 'zod';
 import { executeCallback } from '../src/callback-validator.js';
 import { ValidationError } from '../src/errors.js';
@@ -19,10 +19,10 @@ test('executeCallback - callback with valid schema result', async () => {
     schema: TestSchema,
     handler: (input: string) => ({
       name: input,
-      age: 25
-    })
+      age: 25,
+    }),
   };
-  
+
   const result = await executeCallback(callback, 'John');
   expect(result).toEqual({ name: 'John', age: 25 });
 });
@@ -32,10 +32,10 @@ test('executeCallback - callback with invalid schema result throws ValidationErr
     schema: TestSchema,
     handler: (input: string) => ({
       name: input,
-      age: 'invalid' // Should be number
-    })
+      age: 'invalid', // Should be number
+    }),
   };
-  
+
   try {
     await executeCallback(callback, 'John');
     expect.unreachable('Should have thrown ValidationError');
@@ -51,9 +51,9 @@ test('executeCallback - callback with missing required field throws ValidationEr
     handler: (input: string) => ({
       name: input,
       // Missing required 'age' field
-    })
+    }),
   };
-  
+
   try {
     await executeCallback(callback, 'John');
     expect.unreachable('Should have thrown ValidationError');
@@ -69,7 +69,7 @@ test('executeCallback - undefined callback returns input', async () => {
 });
 
 test('executeCallback - callback returning undefined falls back to input', async () => {
-  const callback = (input: string) => undefined;
+  const callback = (_input: string) => undefined;
   const result = await executeCallback(callback, 'test');
   expect(result).toBe('test');
 });

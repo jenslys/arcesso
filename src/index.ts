@@ -2,13 +2,25 @@
  * HTTPKit - A fetch wrapper with Standard Schema validation, retry logic, and callbacks
  */
 
+export {
+  HttpError,
+  NetworkError,
+  RetryExhaustedError,
+  TimeoutError,
+  ValidationError,
+} from './errors.js';
+// HTTP method shortcuts
+export { configure, delete, get, patch, post, put } from './methods.js';
 // Core exports
 export { EnhancedResponse } from './response.js';
-export { ValidationError, NetworkError, HttpError, RetryExhaustedError, TimeoutError } from './errors.js';
-export type { RetryOptions, HttpKitRequestOptions, HttpKitConfig, Schemas, AuthOptions } from './types.js';
-
-// HTTP method shortcuts
-export { configure, get, post, put, delete, patch } from './methods.js';
-
 // Type helpers
-export type { StandardSchemaV1, InferOutput, InferInput } from './types.js';
+export type {
+  AuthOptions,
+  HttpKitConfig,
+  HttpKitRequestOptions,
+  InferInput,
+  InferOutput,
+  RetryOptions,
+  Schemas,
+  StandardSchemaV1,
+} from './types.js';

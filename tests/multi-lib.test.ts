@@ -1,7 +1,7 @@
-import { test, expect, mock } from 'bun:test';
-import { z } from 'zod';
+import { expect, mock, test } from 'bun:test';
 import * as v from 'valibot';
-import { get, post, ValidationError } from '../src/index.js';
+import { z } from 'zod';
+import { get, ValidationError } from '../src/index.js';
 
 // Mock fetch globally
 const mockFetch = mock();
@@ -13,7 +13,7 @@ function resetMocks() {
 
 test('httpkit - works with Zod (Standard Schema)', async () => {
   resetMocks();
-  
+
   const UserSchema = z.object({
     id: z.number(),
     name: z.string(),
@@ -22,10 +22,10 @@ test('httpkit - works with Zod (Standard Schema)', async () => {
 
   const mockResponse = new Response(
     JSON.stringify({ id: 1, name: 'John', email: 'john@example.com' }),
-    { 
+    {
       status: 200,
       statusText: 'OK',
-      headers: { 'Content-Type': 'application/json' }
+      headers: { 'Content-Type': 'application/json' },
     }
   );
 
@@ -38,7 +38,7 @@ test('httpkit - works with Zod (Standard Schema)', async () => {
 
 test('httpkit - works with Valibot (Standard Schema)', async () => {
   resetMocks();
-  
+
   const UserSchema = v.object({
     id: v.number(),
     name: v.string(),
@@ -47,10 +47,10 @@ test('httpkit - works with Valibot (Standard Schema)', async () => {
 
   const mockResponse = new Response(
     JSON.stringify({ id: 2, name: 'Jane', email: 'jane@example.com' }),
-    { 
+    {
       status: 200,
       statusText: 'OK',
-      headers: { 'Content-Type': 'application/json' }
+      headers: { 'Content-Type': 'application/json' },
     }
   );
 
@@ -63,7 +63,7 @@ test('httpkit - works with Valibot (Standard Schema)', async () => {
 
 test('httpkit - Zod validation error handling', async () => {
   resetMocks();
-  
+
   const UserSchema = z.object({
     id: z.number(),
     name: z.string(),
@@ -72,10 +72,10 @@ test('httpkit - Zod validation error handling', async () => {
 
   const mockResponse = new Response(
     JSON.stringify({ id: 'invalid', name: 'John' }), // missing email, invalid id
-    { 
+    {
       status: 200,
       statusText: 'OK',
-      headers: { 'Content-Type': 'application/json' }
+      headers: { 'Content-Type': 'application/json' },
     }
   );
 
@@ -95,7 +95,7 @@ test('httpkit - Zod validation error handling', async () => {
 
 test('httpkit - Valibot validation error handling', async () => {
   resetMocks();
-  
+
   const UserSchema = v.object({
     id: v.number(),
     name: v.string(),
@@ -104,10 +104,10 @@ test('httpkit - Valibot validation error handling', async () => {
 
   const mockResponse = new Response(
     JSON.stringify({ id: 'invalid', name: 'John' }), // missing email, invalid id
-    { 
+    {
       status: 200,
       statusText: 'OK',
-      headers: { 'Content-Type': 'application/json' }
+      headers: { 'Content-Type': 'application/json' },
     }
   );
 
@@ -127,7 +127,7 @@ test('httpkit - Valibot validation error handling', async () => {
 
 test('httpkit - Mixed validation libraries in same app', async () => {
   resetMocks();
-  
+
   const ZodUserSchema = z.object({
     id: z.number(),
     name: z.string(),
@@ -138,21 +138,18 @@ test('httpkit - Mixed validation libraries in same app', async () => {
     email: v.pipe(v.string(), v.email()),
   });
 
-  const mockResponse1 = new Response(
-    JSON.stringify({ id: 1, name: 'John' }),
-    { 
-      status: 200,
-      statusText: 'OK',
-      headers: { 'Content-Type': 'application/json' }
-    }
-  );
+  const mockResponse1 = new Response(JSON.stringify({ id: 1, name: 'John' }), {
+    status: 200,
+    statusText: 'OK',
+    headers: { 'Content-Type': 'application/json' },
+  });
 
   const mockResponse2 = new Response(
     JSON.stringify({ id: 1, email: 'john@example.com' }),
-    { 
+    {
       status: 200,
       statusText: 'OK',
-      headers: { 'Content-Type': 'application/json' }
+      headers: { 'Content-Type': 'application/json' },
     }
   );
 
@@ -164,7 +161,9 @@ test('httpkit - Mixed validation libraries in same app', async () => {
   const zodResult = await get('/api/users/1', { schema: ZodUserSchema });
 
   // Use Valibot schema
-  const valibotResult = await get('/api/users/1', { schema: ValibotUserSchema });
+  const valibotResult = await get('/api/users/1', {
+    schema: ValibotUserSchema,
+  });
 
   expect(zodResult).toEqual({ id: 1, name: 'John' });
   expect(valibotResult).toEqual({ id: 1, email: 'john@example.com' });

@@ -1,6 +1,6 @@
-import { test, expect, mock } from 'bun:test';
-import { post, put, patch, ValidationError } from '../src/index.js';
-import { type StandardSchemaV1 } from '../src/types.js';
+import { expect, mock, test } from 'bun:test';
+import { patch, post, put, ValidationError } from '../src/index.js';
+import type { StandardSchemaV1 } from '../src/types.js';
 
 // Mock fetch globally
 const mockFetch = mock();
@@ -12,58 +12,66 @@ function resetMocks() {
 }
 
 // Mock Input Schema for testing
-const CreateUserSchema: StandardSchemaV1<unknown, { name: string; email: string; age: number }> = {
+const CreateUserSchema: StandardSchemaV1<
+  unknown,
+  { name: string; email: string; age: number }
+> = {
   '~standard': {
     version: 1,
     vendor: 'test',
     validate: (value: unknown) => {
       const data = value as any;
-      
+
       if (typeof data !== 'object' || data === null) {
         return { issues: [{ message: 'Expected object' }] };
       }
-      
+
       if (typeof data.name !== 'string' || data.name.length < 1) {
-        return { issues: [{ message: 'Expected name to be non-empty string' }] };
+        return {
+          issues: [{ message: 'Expected name to be non-empty string' }],
+        };
       }
-      
+
       if (typeof data.email !== 'string' || !data.email.includes('@')) {
         return { issues: [{ message: 'Expected email to be valid email' }] };
       }
-      
+
       if (typeof data.age !== 'number' || data.age < 0) {
         return { issues: [{ message: 'Expected age to be positive number' }] };
       }
-      
+
       return { value: { name: data.name, email: data.email, age: data.age } };
     },
   },
 };
 
 // Mock Success Schema
-const UserSchema: StandardSchemaV1<unknown, { id: number; name: string; email: string }> = {
+const UserSchema: StandardSchemaV1<
+  unknown,
+  { id: number; name: string; email: string }
+> = {
   '~standard': {
     version: 1,
     vendor: 'test',
     validate: (value: unknown) => {
       const data = value as any;
-      
+
       if (typeof data !== 'object' || data === null) {
         return { issues: [{ message: 'Expected object' }] };
       }
-      
+
       if (typeof data.id !== 'number') {
         return { issues: [{ message: 'Expected id to be number' }] };
       }
-      
+
       if (typeof data.name !== 'string') {
         return { issues: [{ message: 'Expected name to be string' }] };
       }
-      
+
       if (typeof data.email !== 'string' || !data.email.includes('@')) {
         return { issues: [{ message: 'Expected email to be valid email' }] };
       }
-      
+
       return { value: { id: data.id, name: data.name, email: data.email } };
     },
   },
@@ -73,10 +81,10 @@ test('input schema validation - valid input', async () => {
   resetMocks();
   const mockResponse = new Response(
     JSON.stringify({ id: 1, name: 'John', email: 'john@example.com' }),
-    { 
+    {
       status: 201,
       statusText: 'Created',
-      headers: { 'Content-Type': 'application/json' }
+      headers: { 'Content-Type': 'application/json' },
     }
   );
 
@@ -86,14 +94,14 @@ test('input schema validation - valid input', async () => {
     body: {
       name: 'John',
       email: 'john@example.com',
-      age: 25
+      age: 25,
     },
     inputSchema: CreateUserSchema,
-    schema: UserSchema
+    schema: UserSchema,
   });
 
   expect(result).toEqual({ id: 1, name: 'John', email: 'john@example.com' });
-  
+
   // Verify the validated input was sent
   expect(mockFetch).toHaveBeenCalledWith('/api/users', {
     method: 'POST',
@@ -110,10 +118,10 @@ test('input schema validation - invalid input throws ValidationError', async () 
       body: {
         name: '', // Invalid: empty string
         email: 'john@example.com',
-        age: 25
+        age: 25,
       },
       inputSchema: CreateUserSchema,
-      schema: UserSchema
+      schema: UserSchema,
     });
     expect.unreachable('Should have thrown ValidationError');
   } catch (error) {
@@ -134,10 +142,10 @@ test('input schema validation - missing required field', async () => {
       body: {
         name: 'John',
         // Missing email field
-        age: 25
+        age: 25,
       },
       inputSchema: CreateUserSchema,
-      schema: UserSchema
+      schema: UserSchema,
     });
     expect.unreachable('Should have thrown ValidationError');
   } catch (error) {
@@ -156,10 +164,10 @@ test('input schema validation - invalid email format', async () => {
       body: {
         name: 'John',
         email: 'invalid-email', // Invalid: no @ symbol
-        age: 25
+        age: 25,
       },
       inputSchema: CreateUserSchema,
-      schema: UserSchema
+      schema: UserSchema,
     });
     expect.unreachable('Should have thrown ValidationError');
   } catch (error) {
@@ -178,10 +186,10 @@ test('input schema validation - negative age', async () => {
       body: {
         name: 'John',
         email: 'john@example.com',
-        age: -5 // Invalid: negative age
+        age: -5, // Invalid: negative age
       },
       inputSchema: CreateUserSchema,
-      schema: UserSchema
+      schema: UserSchema,
     });
     expect.unreachable('Should have thrown ValidationError');
   } catch (error) {
@@ -195,11 +203,15 @@ test('input schema validation - negative age', async () => {
 test('input schema validation - works with PUT request', async () => {
   resetMocks();
   const mockResponse = new Response(
-    JSON.stringify({ id: 1, name: 'John Updated', email: 'john.updated@example.com' }),
-    { 
+    JSON.stringify({
+      id: 1,
+      name: 'John Updated',
+      email: 'john.updated@example.com',
+    }),
+    {
       status: 200,
       statusText: 'OK',
-      headers: { 'Content-Type': 'application/json' }
+      headers: { 'Content-Type': 'application/json' },
     }
   );
 
@@ -209,23 +221,27 @@ test('input schema validation - works with PUT request', async () => {
     body: {
       name: 'John Updated',
       email: 'john.updated@example.com',
-      age: 26
+      age: 26,
     },
     inputSchema: CreateUserSchema,
-    schema: UserSchema
+    schema: UserSchema,
   });
 
-  expect(result).toEqual({ id: 1, name: 'John Updated', email: 'john.updated@example.com' });
+  expect(result).toEqual({
+    id: 1,
+    name: 'John Updated',
+    email: 'john.updated@example.com',
+  });
 });
 
 test('input schema validation - works with PATCH request', async () => {
   resetMocks();
   const mockResponse = new Response(
     JSON.stringify({ id: 1, name: 'John Patched', email: 'john@example.com' }),
-    { 
+    {
       status: 200,
       statusText: 'OK',
-      headers: { 'Content-Type': 'application/json' }
+      headers: { 'Content-Type': 'application/json' },
     }
   );
 
@@ -235,23 +251,27 @@ test('input schema validation - works with PATCH request', async () => {
     body: {
       name: 'John Patched',
       email: 'john@example.com',
-      age: 25
+      age: 25,
     },
     inputSchema: CreateUserSchema,
-    schema: UserSchema
+    schema: UserSchema,
   });
 
-  expect(result).toEqual({ id: 1, name: 'John Patched', email: 'john@example.com' });
+  expect(result).toEqual({
+    id: 1,
+    name: 'John Patched',
+    email: 'john@example.com',
+  });
 });
 
 test('input schema validation - skipped when no inputSchema provided', async () => {
   resetMocks();
   const mockResponse = new Response(
     JSON.stringify({ id: 1, name: 'John', email: 'john@example.com' }),
-    { 
+    {
       status: 201,
       statusText: 'Created',
-      headers: { 'Content-Type': 'application/json' }
+      headers: { 'Content-Type': 'application/json' },
     }
   );
 
@@ -262,9 +282,9 @@ test('input schema validation - skipped when no inputSchema provided', async () 
       name: 'John',
       email: 'john@example.com',
       age: 25,
-      extra: 'field' // This would be invalid with schema but should work without
+      extra: 'field', // This would be invalid with schema but should work without
     },
-    schema: UserSchema
+    schema: UserSchema,
     // No inputSchema provided
   });
 
@@ -275,10 +295,10 @@ test('input schema validation - skipped for null/undefined body', async () => {
   resetMocks();
   const mockResponse = new Response(
     JSON.stringify({ id: 1, name: 'Default', email: 'default@example.com' }),
-    { 
+    {
       status: 201,
       statusText: 'Created',
-      headers: { 'Content-Type': 'application/json' }
+      headers: { 'Content-Type': 'application/json' },
     }
   );
 
@@ -287,11 +307,15 @@ test('input schema validation - skipped for null/undefined body', async () => {
   const result = await post('/api/users', {
     body: null,
     inputSchema: CreateUserSchema,
-    schema: UserSchema
+    schema: UserSchema,
   });
 
-  expect(result).toEqual({ id: 1, name: 'Default', email: 'default@example.com' });
-  
+  expect(result).toEqual({
+    id: 1,
+    name: 'Default',
+    email: 'default@example.com',
+  });
+
   // Should send empty body
   expect(mockFetch).toHaveBeenCalledWith('/api/users', {
     method: 'POST',
