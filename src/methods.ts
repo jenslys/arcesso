@@ -261,7 +261,7 @@ async function executeRequestWithoutSchema<
  *   schemas: { success: UserSchema, error: ErrorSchema },
  *   query: { include: 'profile' }
  * });
- * 
+ *
  * // Without schema validation
  * const data = await get('/api/data');
  * ```
