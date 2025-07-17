@@ -1,5 +1,5 @@
 /**
- * Custom error types for HTTPKit
+ * Custom error types for Arcesso
  */
 
 export class ValidationError extends Error {

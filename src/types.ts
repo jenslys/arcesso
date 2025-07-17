@@ -81,75 +81,122 @@ export type InferInput<T> = T extends StandardSchemaV1<infer Input, any>
   ? Input
   : never;
 
+/**
+ * Configuration options for request retry logic
+ */
 export interface RetryOptions {
+  /** Number of retry attempts */
   attempts: number;
+  /** Backoff strategy between retries */
   backoff?: 'linear' | 'exponential';
+  /** Initial delay in milliseconds */
   initialDelay?: number;
+  /** Maximum delay in milliseconds */
   maxDelay?: number;
-  retryOn?: number[]; // HTTP status codes to retry on
+  /** HTTP status codes to retry on */
+  retryOn?: number[];
+  /** Callback function called on each retry attempt */
   onRetry?: (attempt: number, error: Error) => void;
 }
 
-// Callback with schema validation
+/**
+ * Callback with schema validation for return value
+ */
 export interface CallbackWithSchema<TInput, TSchema extends StandardSchemaV1> {
+  /** Schema to validate callback return value */
   schema: TSchema;
+  /** Callback function */
   handler: (input: TInput) => unknown;
 }
 
-// Simple callback without schema validation
+/**
+ * Simple callback without schema validation
+ */
 export type SimpleCallback<TInput> = (input: TInput) => unknown;
 
-// Union type for callbacks that can optionally have schema validation
+/**
+ * Union type for callbacks that can optionally have schema validation
+ */
 export type CallbackOption<
   TInput,
   TSchema extends StandardSchemaV1 = StandardSchemaV1,
 > = SimpleCallback<TInput> | CallbackWithSchema<TInput, TSchema>;
 
-// Schema definitions for request/response validation
+/**
+ * Schema definitions for request/response validation pipeline
+ */
 export interface Schemas<
   TInput extends StandardSchemaV1 = StandardSchemaV1,
   TSuccess extends StandardSchemaV1 = StandardSchemaV1,
   TError extends StandardSchemaV1 = StandardSchemaV1,
 > {
+  /** Schema to validate request body before sending */
   input?: TInput;
+  /** Schema to validate successful response data */
   success?: TSuccess;
+  /** Schema to validate error response data */
   error?: TError;
 }
 
-// Auth options for requests
+/**
+ * Authentication options for HTTP requests
+ */
 export interface AuthOptions {
+  /** Bearer token (JWT, etc.) */
   bearer?: string;
+  /** API key for Authorization header */
   apiKey?: string;
+  /** Basic authentication credentials */
   basic?: {
     username: string;
     password: string;
   };
 }
 
-// Simplified options for HTTP method shortcuts
-export interface HttpKitRequestOptions<
+/**
+ * Request options for Arcesso HTTP methods
+ */
+export interface ArcessoRequestOptions<
   TInput extends StandardSchemaV1 = StandardSchemaV1,
   TSuccess extends StandardSchemaV1 = StandardSchemaV1,
   TError extends StandardSchemaV1 = StandardSchemaV1,
 > {
+  /** Schema definitions for input/success/error validation */
   schemas?: Schemas<TInput, TSuccess, TError>;
+  /** Authentication options */
   auth?: AuthOptions;
+  /** Query parameters to append to URL */
   query?: Record<string, string | number | boolean | null | undefined>;
+  /** Custom headers */
   headers?: Record<string, string> | Headers;
+  /** Retry configuration */
   retry?: RetryOptions;
+  /** Request timeout in milliseconds */
   timeout?: number;
+  /** Callback for successful responses */
   onSuccess?: CallbackOption<InferOutput<TSuccess>>;
+  /** Callback for general errors */
   onError?: CallbackOption<Error>;
+  /** Callback for network errors */
   onNetworkError?: CallbackOption<NetworkError>;
+  /** Callback for validation errors */
   onValidationError?: CallbackOption<ValidationError>;
+  /** Callback for HTTP errors (4xx, 5xx) */
   onHttpError?: CallbackOption<InferOutput<TError>>;
+  /** Callback for timeout errors */
   onTimeout?: CallbackOption<TimeoutError>;
 }
 
-// Global configuration interface
-export interface HttpKitConfig {
+/**
+ * Global configuration interface for Arcesso
+ */
+export interface ArcessoConfig {
+  /** Base URL for all requests */
   baseUrl?: string;
+  /** Default headers for all requests */
   headers?: Record<string, string>;
+  /** Default retry configuration */
   retry?: RetryOptions;
+  /** Default timeout in milliseconds */
   timeout?: number;
 }

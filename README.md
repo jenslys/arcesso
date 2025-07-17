@@ -1,10 +1,10 @@
-# HTTPKit
+# Arcesso
 
 A modern, lightweight TypeScript HTTP client that's **zero dependencies** (13KB), **universal** (works in browsers and servers), and built on **native fetch**. Features Standard Schema validation, retry logic, timeout support, and comprehensive error handling.
 
 **Perfect for production**: Tiny bundle, type-safe validation with Zod/Valibot, and works everywhere.
 
-## Why HTTPKit?
+## Why Arcesso?
 
 **Tiny & Fast**: Only 13KB bundled, zero dependencies, built on native fetch
 **Universal**: Works in browsers, Node.js, Bun, Deno, Edge functions, and serverless
@@ -33,18 +33,18 @@ A modern, lightweight TypeScript HTTP client that's **zero dependencies** (13KB)
 ## Installation
 
 ```bash
-bun add httpkit
+bun add arcesso
 bun add zod # or valibot, arktype, etc.
 ```
 
-> **13KB total bundle size** - HTTPKit adds almost no weight to your application!
+> **13KB total bundle size** - Arcesso adds almost no weight to your application!
 
 ## Usage
 
 ### Basic Usage
 
 ```typescript
-import { get, post } from "httpkit";
+import { get, post } from "arcesso";
 import { z } from "zod";
 
 // Define schemas for the complete pipeline
@@ -116,7 +116,7 @@ const newUser = await post(
 
 ### Authentication
 
-HTTPKit provides built-in auth helpers for common authentication methods:
+Arcesso provides built-in auth helpers for common authentication methods:
 
 ```typescript
 // Bearer token (JWT, etc.)
@@ -178,10 +178,10 @@ const users = await get("/api/users?sort=name", {
 
 ### Input Schema Validation
 
-HTTPKit can validate request bodies before sending them to the API:
+Arcesso can validate request bodies before sending them to the API:
 
 ```typescript
-import { post, ValidationError } from "httpkit";
+import { post, ValidationError } from "arcesso";
 import { z } from "zod";
 
 const CreateUserSchema = z.object({
@@ -222,10 +222,10 @@ try {
 
 ### Error Response Schema Validation
 
-HTTPKit allows you to validate error responses with schemas, providing type-safe error handling:
+Arcesso allows you to validate error responses with schemas, providing type-safe error handling:
 
 ```typescript
-import { get, HttpError } from "httpkit";
+import { get, HttpError } from "arcesso";
 import { z } from "zod";
 
 // Define schemas for both success and error responses
@@ -290,7 +290,7 @@ const result = await get("/api/users/1", {
 ### Global Configuration
 
 ```typescript
-import { configure } from "httpkit";
+import { configure } from "arcesso";
 
 configure({
   baseUrl: "https://api.example.com",
@@ -396,16 +396,16 @@ try {
 // GET request
 function get<T>(
   url: string,
-  options: { schema: Schema<T> } & HttpKitRequestOptions,
+  options: { schema: Schema<T> } & ArcessoRequestOptions,
 ): Promise<T>;
-function get(url: string, options?: HttpKitRequestOptions): Promise<unknown>;
+function get(url: string, options?: ArcessoRequestOptions): Promise<unknown>;
 
 // POST request
 function post<T>(
   url: string,
-  options: { body: unknown; schema: Schema<T> } & HttpKitRequestOptions,
+  options: { body: unknown; schema: Schema<T> } & ArcessoRequestOptions,
 ): Promise<T>;
-function post(url: string, options?: HttpKitRequestOptions): Promise<unknown>;
+function post(url: string, options?: ArcessoRequestOptions): Promise<unknown>;
 
 // PUT, DELETE, PATCH follow the same pattern
 ```
@@ -413,9 +413,9 @@ function post(url: string, options?: HttpKitRequestOptions): Promise<unknown>;
 ### Configuration
 
 ```typescript
-function configure(config: HttpKitConfig): void;
+function configure(config: ArcessoConfig): void;
 
-interface HttpKitConfig {
+interface ArcessoConfig {
   baseUrl?: string;
   headers?: Record<string, string>;
   retry?: RetryOptions;
@@ -426,7 +426,7 @@ interface HttpKitConfig {
 ### Request Options
 
 ```typescript
-interface HttpKitRequestOptions<
+interface ArcessoRequestOptions<
   TSchema = unknown,
   TErrorSchema = unknown,
   TInputSchema = unknown,
@@ -485,7 +485,7 @@ type CallbackOption<T> = SimpleCallback<T> | CallbackWithSchema<T, Schema>;
 
 ## Validation Library Support
 
-HTTPKit implements the **official [Standard Schema](https://github.com/standard-schema/standard-schema) specification** locally with **zero dependencies**. This means it works with any validation library that implements Standard Schema:
+Arcesso implements the **official [Standard Schema](https://github.com/standard-schema/standard-schema) specification** locally with **zero dependencies**. This means it works with any validation library that implements Standard Schema:
 
 | Library     | Status          | Bundle Impact           |
 | ----------- | --------------- | ----------------------- |
@@ -495,7 +495,7 @@ HTTPKit implements the **official [Standard Schema](https://github.com/standard-
 | **Yup**     | 🔄 Coming soon  | -                       |
 | **Joi**     | 🔄 Coming soon  | -                       |
 
-**Zero Bundle Bloat**: HTTPKit includes the Standard Schema interface locally (1:1 copy of the official spec), so you get full validation support without any additional dependencies.
+**Zero Bundle Bloat**: Arcesso includes the Standard Schema interface locally (1:1 copy of the official spec), so you get full validation support without any additional dependencies.
 
 ### Example with different libraries:
 

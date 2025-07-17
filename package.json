@@ -1,8 +1,8 @@
 {
-  "name": "httpkit",
+  "name": "arcesso",
   "module": "index.ts",
   "type": "module",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "license": "MIT",
   "devDependencies": {
     "@biomejs/biome": "^2.1.2",

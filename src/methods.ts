@@ -7,27 +7,32 @@ import {
   ValidationError,
 } from './errors.js';
 import type {
+  ArcessoConfig,
+  ArcessoRequestOptions,
   AuthOptions,
-  HttpKitConfig,
-  HttpKitRequestOptions,
   InferOutput,
   StandardSchemaV1,
 } from './types.js';
 
-// Global configuration
-let globalConfig: HttpKitConfig = {};
+let globalConfig: ArcessoConfig = {};
 
 /**
- * Configure global settings for HTTPKit
- * @param config - Global configuration options
+ * Configure global settings for Arcesso HTTP client
+ * @param config - Global configuration options including baseUrl, headers, retry settings, and timeout
+ * @example
+ * ```typescript
+ * configure({
+ *   baseUrl: 'https://api.example.com',
+ *   headers: { 'Authorization': 'Bearer token' },
+ *   timeout: 5000,
+ *   retry: { attempts: 3, backoff: 'exponential' }
+ * });
+ * ```
  */
-function configure(config: HttpKitConfig): void {
+function configure(config: ArcessoConfig): void {
   globalConfig = { ...config };
 }
 
-/**
- * Helper function to merge URL with base URL
- */
 function resolveUrl(url: string): string {
   if (globalConfig.baseUrl && !url.startsWith('http')) {
     return `${globalConfig.baseUrl.replace(/\/$/, '')}/${url.replace(/^\//, '')}`;
@@ -35,9 +40,6 @@ function resolveUrl(url: string): string {
   return url;
 }
 
-/**
- * Helper function to merge headers with global headers
- */
 function mergeHeaders(
   headers?: Record<string, string> | Headers
 ): Record<string, string> {
@@ -56,9 +58,6 @@ function mergeHeaders(
   return merged;
 }
 
-/**
- * Helper function to automatically handle JSON serialization
- */
 function prepareBody(body: unknown): {
   body: string | FormData | Blob | ArrayBuffer | ReadableStream;
   headers: Record<string, string>;
@@ -80,16 +79,12 @@ function prepareBody(body: unknown): {
     return { body, headers: {} };
   }
 
-  // Auto-stringify objects to JSON
   return {
     body: JSON.stringify(body),
     headers: { 'Content-Type': 'application/json' },
   };
 }
 
-/**
- * Prepare auth headers from auth options
- */
 function prepareAuthHeaders(auth: AuthOptions): Record<string, string> {
   const headers: Record<string, string> = {};
 
@@ -105,9 +100,6 @@ function prepareAuthHeaders(auth: AuthOptions): Record<string, string> {
   return headers;
 }
 
-/**
- * Prepare query parameters and append to URL
- */
 function prepareUrl(
   url: string,
   query?: Record<string, string | number | boolean | null | undefined>
@@ -133,9 +125,6 @@ function prepareUrl(
   return url;
 }
 
-/**
- * Internal function to execute HTTP requests with unified logic
- */
 async function executeHttpRequestWithCallbacks<
   TInput extends StandardSchemaV1,
   TSuccess extends StandardSchemaV1,
@@ -144,15 +133,13 @@ async function executeHttpRequestWithCallbacks<
   method: string,
   url: string,
   body: unknown,
-  options: HttpKitRequestOptions<TInput, TSuccess, TError> = {}
+  options: ArcessoRequestOptions<TInput, TSuccess, TError> = {}
 ): Promise<
   TSuccess extends StandardSchemaV1 ? InferOutput<TSuccess> : unknown
 > {
-  // Prepare URL with query parameters
   const baseUrl = resolveUrl(url);
   const finalUrl = prepareUrl(baseUrl, options.query);
 
-  // Validate input body if schema is provided
   let validatedBody = body;
   if (options.schemas?.input && body !== undefined && body !== null) {
     const result = await options.schemas.input['~standard'].validate(body);
@@ -168,7 +155,6 @@ async function executeHttpRequestWithCallbacks<
     }
   }
 
-  // Prepare headers from different sources
   const { body: preparedBody, headers: bodyHeaders } =
     prepareBody(validatedBody);
   const authHeaders = options.auth ? prepareAuthHeaders(options.auth) : {};
@@ -216,7 +202,6 @@ async function executeHttpRequestWithCallbacks<
     }
 
     if (error instanceof HttpError && options.onHttpError) {
-      // If we have validated error data, pass it to the callback, otherwise pass the response
       const callbackInput =
         error.data !== undefined ? error.data : error.response;
       return await executeCallback(options.onHttpError, callbackInput);
@@ -238,9 +223,6 @@ async function executeHttpRequestWithCallbacks<
   }
 }
 
-/**
- * Internal function to execute HTTP requests with type safety
- */
 async function executeRequest<
   TInput extends StandardSchemaV1,
   TSuccess extends StandardSchemaV1,
@@ -249,14 +231,11 @@ async function executeRequest<
   method: string,
   url: string,
   body: unknown,
-  options: HttpKitRequestOptions<TInput, TSuccess, TError> = {}
+  options: ArcessoRequestOptions<TInput, TSuccess, TError> = {}
 ): Promise<InferOutput<TSuccess>> {
   return executeHttpRequestWithCallbacks(method, url, body, options);
 }
 
-/**
- * Internal function to execute HTTP requests without schema validation
- */
 async function executeRequestWithoutSchema<
   TInput extends StandardSchemaV1,
   TError extends StandardSchemaV1,
@@ -264,7 +243,7 @@ async function executeRequestWithoutSchema<
   method: string,
   url: string,
   body: unknown,
-  options: HttpKitRequestOptions<TInput, StandardSchemaV1, TError> = {}
+  options: ArcessoRequestOptions<TInput, StandardSchemaV1, TError> = {}
 ): Promise<unknown> {
   return executeHttpRequestWithCallbacks(method, url, body, options);
 }
@@ -272,8 +251,20 @@ async function executeRequestWithoutSchema<
 /**
  * Performs a GET request with optional schema validation
  * @param url - The URL to make the request to
- * @param options - Request options including schemas and callbacks
- * @returns Promise resolving to the response data
+ * @param options - Request options including schemas, auth, query params, and error callbacks
+ * @returns Promise resolving to the validated response data
+ * @example
+ * ```typescript
+ * // With schema validation
+ * const user = await get('/api/users/1', {
+ *   auth: { bearer: 'token123' },
+ *   schemas: { success: UserSchema, error: ErrorSchema },
+ *   query: { include: 'profile' }
+ * });
+ * 
+ * // Without schema validation
+ * const data = await get('/api/data');
+ * ```
  */
 function get<
   TInput extends StandardSchemaV1,
@@ -281,14 +272,14 @@ function get<
   TError extends StandardSchemaV1,
 >(
   url: string,
-  options: HttpKitRequestOptions<TInput, TSuccess, TError> & {
+  options: ArcessoRequestOptions<TInput, TSuccess, TError> & {
     schemas: { success: TSuccess };
   }
 ): Promise<InferOutput<TSuccess>>;
 
 function get<TInput extends StandardSchemaV1, TError extends StandardSchemaV1>(
   url: string,
-  options?: HttpKitRequestOptions<TInput, StandardSchemaV1, TError>
+  options?: ArcessoRequestOptions<TInput, StandardSchemaV1, TError>
 ): Promise<unknown>;
 
 function get<
@@ -297,7 +288,7 @@ function get<
   TError extends StandardSchemaV1,
 >(
   url: string,
-  options: HttpKitRequestOptions<TInput, TSuccess, TError> = {}
+  options: ArcessoRequestOptions<TInput, TSuccess, TError> = {}
 ): Promise<InferOutput<TSuccess> | unknown> {
   if (options.schemas?.success) {
     return executeRequest('GET', url, undefined, options);
@@ -309,9 +300,23 @@ function get<
 /**
  * Performs a POST request with automatic JSON handling and optional schema validation
  * @param url - The URL to make the request to
- * @param body - The request body data
- * @param options - Request options including schemas and callbacks
- * @returns Promise resolving to the response data
+ * @param body - The request body data (will be JSON stringified automatically)
+ * @param options - Request options including schemas, auth, query params, and error callbacks
+ * @returns Promise resolving to the validated response data
+ * @example
+ * ```typescript
+ * const newUser = await post('/api/users', {
+ *   name: 'John',
+ *   email: 'john@example.com'
+ * }, {
+ *   auth: { bearer: 'token123' },
+ *   schemas: {
+ *     input: CreateUserSchema,
+ *     success: UserSchema,
+ *     error: ErrorSchema
+ *   }
+ * });
+ * ```
  */
 function post<
   TInput extends StandardSchemaV1,
@@ -320,7 +325,7 @@ function post<
 >(
   url: string,
   body: unknown,
-  options: HttpKitRequestOptions<TInput, TSuccess, TError> & {
+  options: ArcessoRequestOptions<TInput, TSuccess, TError> & {
     schemas: { success: TSuccess };
   }
 ): Promise<InferOutput<TSuccess>>;
@@ -328,7 +333,7 @@ function post<
 function post<TInput extends StandardSchemaV1, TError extends StandardSchemaV1>(
   url: string,
   body?: unknown,
-  options?: HttpKitRequestOptions<TInput, StandardSchemaV1, TError>
+  options?: ArcessoRequestOptions<TInput, StandardSchemaV1, TError>
 ): Promise<unknown>;
 
 function post<
@@ -338,7 +343,7 @@ function post<
 >(
   url: string,
   body: unknown = undefined,
-  options: HttpKitRequestOptions<TInput, TSuccess, TError> = {}
+  options: ArcessoRequestOptions<TInput, TSuccess, TError> = {}
 ): Promise<InferOutput<TSuccess> | unknown> {
   if (options.schemas?.success) {
     return executeRequest('POST', url, body, options);
@@ -348,7 +353,21 @@ function post<
 }
 
 /**
- * PUT request with automatic JSON handling and type safety
+ * Performs a PUT request with automatic JSON handling and optional schema validation
+ * @param url - The URL to make the request to
+ * @param body - The request body data (will be JSON stringified automatically)
+ * @param options - Request options including schemas, auth, query params, and error callbacks
+ * @returns Promise resolving to the validated response data
+ * @example
+ * ```typescript
+ * const updatedUser = await put('/api/users/1', {
+ *   name: 'John Updated',
+ *   email: 'john.updated@example.com'
+ * }, {
+ *   auth: { bearer: 'token123' },
+ *   schemas: { success: UserSchema }
+ * });
+ * ```
  */
 function put<
   TInput extends StandardSchemaV1,
@@ -357,7 +376,7 @@ function put<
 >(
   url: string,
   body: unknown,
-  options: HttpKitRequestOptions<TInput, TSuccess, TError> & {
+  options: ArcessoRequestOptions<TInput, TSuccess, TError> & {
     schemas: { success: TSuccess };
   }
 ): Promise<InferOutput<TSuccess>>;
@@ -365,7 +384,7 @@ function put<
 function put<TInput extends StandardSchemaV1, TError extends StandardSchemaV1>(
   url: string,
   body?: unknown,
-  options?: HttpKitRequestOptions<TInput, StandardSchemaV1, TError>
+  options?: ArcessoRequestOptions<TInput, StandardSchemaV1, TError>
 ): Promise<unknown>;
 
 function put<
@@ -375,7 +394,7 @@ function put<
 >(
   url: string,
   body: unknown = undefined,
-  options: HttpKitRequestOptions<TInput, TSuccess, TError> = {}
+  options: ArcessoRequestOptions<TInput, TSuccess, TError> = {}
 ): Promise<InferOutput<TSuccess> | unknown> {
   if (options.schemas?.success) {
     return executeRequest('PUT', url, body, options);
@@ -385,7 +404,17 @@ function put<
 }
 
 /**
- * DELETE request
+ * Performs a DELETE request with optional schema validation
+ * @param url - The URL to make the request to
+ * @param options - Request options including schemas, auth, query params, and error callbacks
+ * @returns Promise resolving to the validated response data
+ * @example
+ * ```typescript
+ * await delete('/api/users/1', {
+ *   auth: { bearer: 'token123' },
+ *   schemas: { success: DeleteResponseSchema }
+ * });
+ * ```
  */
 function del<
   TInput extends StandardSchemaV1,
@@ -393,14 +422,14 @@ function del<
   TError extends StandardSchemaV1,
 >(
   url: string,
-  options: HttpKitRequestOptions<TInput, TSuccess, TError> & {
+  options: ArcessoRequestOptions<TInput, TSuccess, TError> & {
     schemas: { success: TSuccess };
   }
 ): Promise<InferOutput<TSuccess>>;
 
 function del<TInput extends StandardSchemaV1, TError extends StandardSchemaV1>(
   url: string,
-  options?: HttpKitRequestOptions<TInput, StandardSchemaV1, TError>
+  options?: ArcessoRequestOptions<TInput, StandardSchemaV1, TError>
 ): Promise<unknown>;
 
 function del<
@@ -409,7 +438,7 @@ function del<
   TError extends StandardSchemaV1,
 >(
   url: string,
-  options: HttpKitRequestOptions<TInput, TSuccess, TError> = {}
+  options: ArcessoRequestOptions<TInput, TSuccess, TError> = {}
 ): Promise<InferOutput<TSuccess> | unknown> {
   if (options.schemas?.success) {
     return executeRequest('DELETE', url, undefined, options);
@@ -419,7 +448,20 @@ function del<
 }
 
 /**
- * PATCH request with automatic JSON handling and type safety
+ * Performs a PATCH request with automatic JSON handling and optional schema validation
+ * @param url - The URL to make the request to
+ * @param body - The request body data (will be JSON stringified automatically)
+ * @param options - Request options including schemas, auth, query params, and error callbacks
+ * @returns Promise resolving to the validated response data
+ * @example
+ * ```typescript
+ * const patchedUser = await patch('/api/users/1', {
+ *   name: 'John Patched'
+ * }, {
+ *   auth: { bearer: 'token123' },
+ *   schemas: { success: UserSchema }
+ * });
+ * ```
  */
 function patch<
   TInput extends StandardSchemaV1,
@@ -428,7 +470,7 @@ function patch<
 >(
   url: string,
   body: unknown,
-  options: HttpKitRequestOptions<TInput, TSuccess, TError> & {
+  options: ArcessoRequestOptions<TInput, TSuccess, TError> & {
     schemas: { success: TSuccess };
   }
 ): Promise<InferOutput<TSuccess>>;
@@ -439,7 +481,7 @@ function patch<
 >(
   url: string,
   body?: unknown,
-  options?: HttpKitRequestOptions<TInput, StandardSchemaV1, TError>
+  options?: ArcessoRequestOptions<TInput, StandardSchemaV1, TError>
 ): Promise<unknown>;
 
 function patch<
@@ -449,7 +491,7 @@ function patch<
 >(
   url: string,
   body: unknown = undefined,
-  options: HttpKitRequestOptions<TInput, TSuccess, TError> = {}
+  options: ArcessoRequestOptions<TInput, TSuccess, TError> = {}
 ): Promise<InferOutput<TSuccess> | unknown> {
   if (options.schemas?.success) {
     return executeRequest('PATCH', url, body, options);

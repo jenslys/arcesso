@@ -1,5 +1,5 @@
 /**
- * HTTPKit - A fetch wrapper with Standard Schema validation, retry logic, and callbacks
+ * Arcesso - A fetch wrapper with Standard Schema validation, retry logic, and callbacks
  */
 
 export {
@@ -15,9 +15,9 @@ export { configure, delete, get, patch, post, put } from './methods.js';
 export { EnhancedResponse } from './response.js';
 // Type helpers
 export type {
+  ArcessoConfig,
+  ArcessoRequestOptions,
   AuthOptions,
-  HttpKitConfig,
-  HttpKitRequestOptions,
   InferInput,
   InferOutput,
   RetryOptions,
