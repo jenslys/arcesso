@@ -31,10 +31,8 @@ export async function executeCallback<TInput>(
   }
 
   if (hasSchema(callback)) {
-    // Execute the handler first
     const result = await callback.handler(input);
 
-    // Then validate the result with the schema
     const validationResult =
       await callback.schema['~standard'].validate(result);
 
@@ -53,13 +51,11 @@ export async function executeCallback<TInput>(
       );
     }
 
-    // If neither value nor issues, something went wrong
     throw new ValidationError(
       'Callback result validation failed: Unknown error',
       []
     );
   } else {
-    // Simple callback without schema validation
     const result = await callback(input);
     return result !== undefined ? result : input;
   }

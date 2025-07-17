@@ -63,8 +63,8 @@ test('timeout - request times out with TimeoutError', async () => {
     expect.unreachable('Should have thrown TimeoutError');
   } catch (error) {
     expect(error).toBeInstanceOf(TimeoutError);
-    expect(error.message).toContain('Request timed out after 100ms');
-    expect(error.timeout).toBe(100);
+    expect((error as TimeoutError).message).toContain('Request timed out after 100ms');
+    expect((error as TimeoutError).timeout).toBe(100);
   }
 });
 
@@ -104,14 +104,14 @@ test('timeout - with HTTP method shortcuts', async () => {
 
   try {
     await get('/users/1', {
-      schema: UserSchema,
+      schemas: { success: UserSchema },
       timeout: 50, // 50ms timeout
     });
 
     expect.unreachable('Should have thrown TimeoutError');
   } catch (error) {
     expect(error).toBeInstanceOf(TimeoutError);
-    expect(error.timeout).toBe(50);
+    expect((error as TimeoutError).timeout).toBe(50);
   }
 });
 
@@ -159,12 +159,12 @@ test('timeout - global configuration', async () => {
 
   try {
     await get('/users/1', {
-      schema: UserSchema,
+      schemas: { success: UserSchema },
     });
     expect.unreachable('Should have thrown TimeoutError');
   } catch (error) {
     expect(error).toBeInstanceOf(TimeoutError);
-    expect(error.timeout).toBe(100);
+    expect((error as TimeoutError).timeout).toBe(100);
   }
 });
 
@@ -186,7 +186,7 @@ test('timeout - per-request timeout overrides global timeout', async () => {
   );
 
   const result = await get('/users/1', {
-    schema: UserSchema,
+    schemas: { success: UserSchema },
     timeout: 5000, // 5 second per-request timeout overrides global
   });
 
@@ -212,7 +212,7 @@ test('timeout - with retry logic', async () => {
 
   try {
     await get('/users/1', {
-      schema: UserSchema,
+      schemas: { success: UserSchema },
       timeout: 100, // 100ms timeout per attempt
       retry: { attempts: 3 },
     });
@@ -240,16 +240,15 @@ test('timeout - with different HTTP methods', async () => {
   const userData = { name: 'John', email: 'john@example.com' };
 
   try {
-    await post('/users', {
-      body: userData,
-      schema: UserSchema,
+    await post('/users', userData, {
+      schemas: { success: UserSchema },
       timeout: 50,
     });
 
     expect.unreachable('Should have thrown TimeoutError');
   } catch (error) {
     expect(error).toBeInstanceOf(TimeoutError);
-    expect(error.timeout).toBe(50);
+    expect((error as TimeoutError).timeout).toBe(50);
   }
 });
 
@@ -272,7 +271,7 @@ test('timeout - with callback schema validation', async () => {
   });
 
   const result = await get('/users/1', {
-    schema: UserSchema,
+    schemas: { success: UserSchema },
     timeout: 50,
     onTimeout: {
       schema: ProcessedSchema,
@@ -285,7 +284,7 @@ test('timeout - with callback schema validation', async () => {
     },
   });
 
-  expect(result).toEqual({
+  expect(result as any).toEqual({
     processed: false,
     data: { id: 0, name: 'timeout', email: 'timeout@example.com' },
   });
@@ -305,7 +304,7 @@ test('timeout - no timeout specified works normally', async () => {
   );
 
   const result = await get('/users/1', {
-    schema: UserSchema,
+    schemas: { success: UserSchema },
   });
 
   expect(result).toEqual({ id: 1, name: 'John', email: 'john@example.com' });

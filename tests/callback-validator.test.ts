@@ -41,7 +41,7 @@ test('executeCallback - callback with invalid schema result throws ValidationErr
     expect.unreachable('Should have thrown ValidationError');
   } catch (error) {
     expect(error).toBeInstanceOf(ValidationError);
-    expect(error.message).toContain('Callback result validation failed');
+    expect((error as ValidationError).message).toContain('Callback result validation failed');
   }
 });
 
@@ -59,7 +59,7 @@ test('executeCallback - callback with missing required field throws ValidationEr
     expect.unreachable('Should have thrown ValidationError');
   } catch (error) {
     expect(error).toBeInstanceOf(ValidationError);
-    expect(error.message).toContain('Callback result validation failed');
+    expect((error as ValidationError).message).toContain('Callback result validation failed');
   }
 });
 

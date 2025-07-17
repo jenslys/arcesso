@@ -9,11 +9,8 @@ export {
   TimeoutError,
   ValidationError,
 } from './errors.js';
-// HTTP method shortcuts
 export { configure, delete, get, patch, post, put } from './methods.js';
-// Core exports
 export { EnhancedResponse } from './response.js';
-// Type helpers
 export type {
   ArcessoConfig,
   ArcessoRequestOptions,

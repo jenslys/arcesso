@@ -5,7 +5,8 @@ import {
   ValidationError,
 } from './errors.js';
 import { EnhancedResponse } from './response.js';
-import { type RetryOptions, withRetry } from './retry.js';
+import { withRetry } from './retry.js';
+import type { RetryOptions } from './types.js';
 
 export interface CoreHttpOptions {
   method: string;
@@ -27,14 +28,12 @@ export async function executeHttpRequest(
 
   const fetchWithRetry = async (): Promise<EnhancedResponse> => {
     try {
-      // Create fetch options with optional timeout signal
       const fetchOptions: RequestInit = {
         method,
         body,
         headers,
       };
 
-      // Add timeout signal if timeout is specified
       if (timeout) {
         fetchOptions.signal = AbortSignal.timeout(timeout);
       }
@@ -44,37 +43,31 @@ export async function executeHttpRequest(
       const enhancedResponse = EnhancedResponse.from(response);
 
       if (!response.ok) {
-        // If we have an error schema, validate the error response
         if (errorSchema) {
           try {
-            // Clone the response to avoid consuming the body stream
             const responseClone = response.clone();
-            const enhancedResponseClone = EnhancedResponse.from(responseClone);
+            const enhancedResponseClone = EnhancedResponse.from(responseClone as Response);
             const errorData = await enhancedResponseClone.json(errorSchema);
-            // Successfully validated error response, create HttpError with validated data
             const httpError = new HttpError(
               `HTTP ${response.status}: ${response.statusText}`,
-              response,
+              response as Response,
               errorData
             );
             throw httpError;
           } catch (validationError) {
-            // Only catch ValidationError from schema validation, not HttpError
             if (validationError instanceof ValidationError) {
-              // If error response validation fails, throw the original HTTP error
               const httpError = new HttpError(
                 `HTTP ${response.status}: ${response.statusText}`,
-                response
+                response as Response
               );
               throw httpError;
             }
-            // Re-throw other errors (like HttpError)
             throw validationError;
           }
         } else {
           const httpError = new HttpError(
             `HTTP ${response.status}: ${response.statusText}`,
-            response
+            response as Response
           );
           throw httpError;
         }
@@ -86,7 +79,6 @@ export async function executeHttpRequest(
         throw error;
       }
 
-      // Handle timeout errors (from AbortSignal.timeout)
       if (
         error instanceof Error &&
         (error.name === 'TimeoutError' ||

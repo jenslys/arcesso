@@ -53,7 +53,7 @@ test('get - with schema returns typed data', async () => {
 
   mockFetch.mockResolvedValueOnce(mockResponse);
 
-  const user = await get('/users/1', { schema: UserSchema });
+  const user = await get('/users/1', { schemas: { success: UserSchema } });
 
   expect(user).toEqual({ id: 1, name: 'John', email: 'john@example.com' });
   expect(mockFetch).toHaveBeenCalledWith('/users/1', {
@@ -94,7 +94,7 @@ test('post - with schema and automatic JSON handling', async () => {
   mockFetch.mockResolvedValueOnce(mockResponse);
 
   const userData = { name: 'Jane', email: 'jane@example.com' };
-  const user = await post('/users', { body: userData, schema: UserSchema });
+  const user = await post('/users', userData, { schemas: { success: UserSchema } });
 
   expect(user).toEqual({ id: 2, name: 'Jane', email: 'jane@example.com' });
   expect(mockFetch).toHaveBeenCalledWith('/users', {
@@ -116,7 +116,7 @@ test('post - without schema', async () => {
   mockFetch.mockResolvedValueOnce(mockResponse);
 
   const userData = { name: 'Jane', email: 'jane@example.com' };
-  const result = await post('/users', { body: userData });
+  const result = await post('/users', userData);
 
   expect(result).toEqual({ success: true });
   expect(mockFetch).toHaveBeenCalledWith('/users', {
@@ -145,7 +145,7 @@ test('put - with schema and automatic JSON handling', async () => {
   mockFetch.mockResolvedValueOnce(mockResponse);
 
   const userData = { name: 'John Updated', email: 'john.updated@example.com' };
-  const user = await put('/users/1', { body: userData, schema: UserSchema });
+  const user = await put('/users/1', userData, { schemas: { success: UserSchema } });
 
   expect(user).toEqual({
     id: 1,
@@ -173,7 +173,7 @@ test('delete - with schema', async () => {
 
   mockFetch.mockResolvedValueOnce(mockResponse);
 
-  const user = await del('/users/1', { schema: UserSchema });
+  const user = await del('/users/1', { schemas: { success: UserSchema } });
 
   expect(user).toEqual({ id: 1, name: 'John', email: 'john@example.com' });
   expect(mockFetch).toHaveBeenCalledWith('/users/1', {
@@ -198,7 +198,7 @@ test('patch - with schema and automatic JSON handling', async () => {
   mockFetch.mockResolvedValueOnce(mockResponse);
 
   const userData = { name: 'John Patched' };
-  const user = await patch('/users/1', { body: userData, schema: UserSchema });
+  const user = await patch('/users/1', userData, { schemas: { success: UserSchema } });
 
   expect(user).toEqual({
     id: 1,
@@ -231,7 +231,7 @@ test('global configuration - baseUrl and headers', async () => {
 
   mockFetch.mockResolvedValueOnce(mockResponse);
 
-  const user = await get('/users/1', { schema: UserSchema });
+  const user = await get('/users/1', { schemas: { success: UserSchema } });
 
   expect(user).toEqual({ id: 1, name: 'John', email: 'john@example.com' });
   expect(mockFetch).toHaveBeenCalledWith('https://api.example.com/users/1', {
@@ -259,7 +259,7 @@ test('callback functions with type safety', async () => {
   mockFetch.mockResolvedValueOnce(mockResponse);
 
   const user = await get('/users/1', {
-    schema: UserSchema,
+    schemas: { success: UserSchema },
     onSuccess: (data) => {
       // data is typed as { id: number; name: string; email: string; }
       expect(data).toEqual({ id: 1, name: 'John', email: 'john@example.com' });
@@ -285,7 +285,7 @@ test('validation error handling', async () => {
   mockFetch.mockResolvedValueOnce(mockResponse);
 
   const result = await get('/users/1', {
-    schema: UserSchema,
+    schemas: { success: UserSchema },
     onValidationError: (error) => {
       console.log('onValidationError called with:', error);
       expect(error).toBeInstanceOf(ValidationError);
@@ -311,7 +311,7 @@ test('works with Valibot schema', async () => {
 
   mockFetch.mockResolvedValueOnce(mockResponse);
 
-  const user = await get('/users/1', { schema: ValibotUserSchema });
+  const user = await get('/users/1', { schemas: { success: ValibotUserSchema } });
 
   expect(user).toEqual({ id: 1, name: 'John', email: 'john@example.com' });
 });
@@ -330,7 +330,7 @@ test('handles different body types', async () => {
   const formData = new FormData();
   formData.append('name', 'John');
 
-  const result = await post('/users', { body: formData });
+  const result = await post('/users', formData);
 
   expect(result).toEqual({ success: true });
   // FormData should be passed through directly without extra headers
@@ -360,7 +360,7 @@ test('custom headers override global headers', async () => {
   mockFetch.mockResolvedValueOnce(mockResponse);
 
   const user = await get('/users/1', {
-    schema: UserSchema,
+    schemas: { success: UserSchema },
     headers: { 'X-Custom': 'local', 'X-New': 'header' },
   });
 

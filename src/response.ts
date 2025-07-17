@@ -43,7 +43,6 @@ export class EnhancedResponse {
     throw new ValidationError('Unknown validation error', []);
   }
 
-  // Delegate all other Response properties and methods
   get status(): number {
     return this._response.status;
   }

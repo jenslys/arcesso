@@ -1,6 +1,5 @@
 import type { NetworkError, TimeoutError, ValidationError } from './errors.js';
 
-// Local Standard Schema interface (zero dependencies!)
 /** The Standard Schema interface. */
 export interface StandardSchemaV1<Input = unknown, Output = Input> {
   /** The Standard Schema properties. */
@@ -71,12 +70,10 @@ export namespace StandardSchemaV1 {
   >['output'];
 }
 
-// Type helper to extract Output type from schema
 export type InferOutput<T> = T extends StandardSchemaV1<any, infer Output>
   ? Output
   : never;
 
-// Type helper to extract Input type from schema
 export type InferInput<T> = T extends StandardSchemaV1<infer Input, any>
   ? Input
   : never;

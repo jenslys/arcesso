@@ -2,7 +2,7 @@
   "name": "arcesso",
   "module": "index.ts",
   "type": "module",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "license": "MIT",
   "devDependencies": {
     "@biomejs/biome": "^2.1.2",

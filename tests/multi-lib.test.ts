@@ -31,7 +31,7 @@ test('httpkit - works with Zod (Standard Schema)', async () => {
 
   mockFetch.mockResolvedValueOnce(mockResponse);
 
-  const result = await get('/api/users/1', { schema: UserSchema });
+  const result = await get('/api/users/1', { schemas: { success: UserSchema } });
 
   expect(result).toEqual({ id: 1, name: 'John', email: 'john@example.com' });
 });
@@ -56,7 +56,7 @@ test('httpkit - works with Valibot (Standard Schema)', async () => {
 
   mockFetch.mockResolvedValueOnce(mockResponse);
 
-  const result = await get('/api/users/2', { schema: UserSchema });
+  const result = await get('/api/users/2', { schemas: { success: UserSchema } });
 
   expect(result).toEqual({ id: 2, name: 'Jane', email: 'jane@example.com' });
 });
@@ -82,7 +82,7 @@ test('httpkit - Zod validation error handling', async () => {
   mockFetch.mockResolvedValueOnce(mockResponse);
 
   const result = await get('/api/users/1', {
-    schema: UserSchema,
+    schemas: { success: UserSchema },
     onValidationError: (error) => {
       expect(error).toBeInstanceOf(ValidationError);
       expect(error.issues).toBeDefined();
@@ -90,7 +90,7 @@ test('httpkit - Zod validation error handling', async () => {
     },
   });
 
-  expect(result).toEqual({ error: 'zod_validation_failed' });
+  expect(result as any).toEqual({ error: 'zod_validation_failed' });
 });
 
 test('httpkit - Valibot validation error handling', async () => {
@@ -114,7 +114,7 @@ test('httpkit - Valibot validation error handling', async () => {
   mockFetch.mockResolvedValueOnce(mockResponse);
 
   const result = await get('/api/users/1', {
-    schema: UserSchema,
+    schemas: { success: UserSchema },
     onValidationError: (error) => {
       expect(error).toBeInstanceOf(ValidationError);
       expect(error.issues).toBeDefined();
@@ -122,7 +122,7 @@ test('httpkit - Valibot validation error handling', async () => {
     },
   });
 
-  expect(result).toEqual({ error: 'valibot_validation_failed' });
+  expect(result as any).toEqual({ error: 'valibot_validation_failed' });
 });
 
 test('httpkit - Mixed validation libraries in same app', async () => {
@@ -158,11 +158,11 @@ test('httpkit - Mixed validation libraries in same app', async () => {
     .mockResolvedValueOnce(mockResponse2);
 
   // Use Zod schema
-  const zodResult = await get('/api/users/1', { schema: ZodUserSchema });
+  const zodResult = await get('/api/users/1', { schemas: { success: ZodUserSchema } });
 
   // Use Valibot schema
   const valibotResult = await get('/api/users/1', {
-    schema: ValibotUserSchema,
+    schemas: { success: ValibotUserSchema },
   });
 
   expect(zodResult).toEqual({ id: 1, name: 'John' });

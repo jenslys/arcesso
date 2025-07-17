@@ -83,8 +83,7 @@ test('error schema validation - valid error response', async () => {
   mockFetch.mockResolvedValueOnce(mockResponse);
 
   const result = await get('/api/users/1', {
-    schema: UserSchema,
-    errorSchema: ErrorSchema,
+    schemas: { success: UserSchema, error: ErrorSchema },
     onHttpError: (errorData) => {
       // errorData should be the validated error response
       expect(errorData).toEqual({ error: 'User not found', code: 404 });
@@ -92,7 +91,7 @@ test('error schema validation - valid error response', async () => {
     },
   });
 
-  expect(result).toEqual({ fallback: 'error_handled' });
+  expect(result as any).toEqual({ fallback: 'error_handled' });
 });
 
 test('error schema validation - invalid error response falls back to raw response', async () => {
@@ -109,17 +108,16 @@ test('error schema validation - invalid error response falls back to raw respons
   mockFetch.mockResolvedValueOnce(mockResponse);
 
   const result = await get('/api/users/1', {
-    schema: UserSchema,
-    errorSchema: ErrorSchema,
+    schemas: { success: UserSchema, error: ErrorSchema },
     onHttpError: (errorData) => {
       // Should get the raw response since validation failed
-      expect(errorData.status).toBe(500);
-      expect(errorData.statusText).toBe('Internal Server Error');
+      expect((errorData as any).status).toBe(500);
+      expect((errorData as any).statusText).toBe('Internal Server Error');
       return { fallback: 'raw_response' };
     },
   });
 
-  expect(result).toEqual({ fallback: 'raw_response' });
+  expect(result as any).toEqual({ fallback: 'raw_response' });
 });
 
 test('error schema validation - without error schema uses raw response', async () => {
@@ -136,16 +134,16 @@ test('error schema validation - without error schema uses raw response', async (
   mockFetch.mockResolvedValueOnce(mockResponse);
 
   const result = await get('/api/users/1', {
-    schema: UserSchema,
+    schemas: { success: UserSchema },
     onHttpError: (response) => {
       // Should get the raw response object
-      expect(response.status).toBe(404);
-      expect(response.statusText).toBe('Not Found');
+      expect((response as any).status).toBe(404);
+      expect((response as any).statusText).toBe('Not Found');
       return { fallback: 'raw_response' };
     },
   });
 
-  expect(result).toEqual({ fallback: 'raw_response' });
+  expect(result as any).toEqual({ fallback: 'raw_response' });
 });
 
 test('error schema validation - POST request with error schema', async () => {
@@ -161,17 +159,15 @@ test('error schema validation - POST request with error schema', async () => {
 
   mockFetch.mockResolvedValueOnce(mockResponse);
 
-  const result = await post('/api/users', {
-    body: { invalid: 'data' },
-    schema: UserSchema,
-    errorSchema: ErrorSchema,
+  const result = await post('/api/users', { invalid: 'data' }, {
+    schemas: { success: UserSchema, error: ErrorSchema },
     onHttpError: (errorData) => {
       expect(errorData).toEqual({ error: 'Validation failed', code: 400 });
       return { created: false };
     },
   });
 
-  expect(result).toEqual({ created: false });
+  expect(result as any).toEqual({ created: false });
 });
 
 test('error schema validation - HttpError contains validated data', async () => {
@@ -189,8 +185,7 @@ test('error schema validation - HttpError contains validated data', async () => 
 
   try {
     await get('/api/users/1', {
-      schema: UserSchema,
-      errorSchema: ErrorSchema,
+      schemas: { success: UserSchema, error: ErrorSchema },
       // No onHttpError callback, so should throw
     });
     expect.unreachable('Should have thrown HttpError');

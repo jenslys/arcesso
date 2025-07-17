@@ -28,6 +28,8 @@ const ProcessedUserSchema = z.object({
   timestamp: z.number(),
 });
 
+type ProcessedUser = z.infer<typeof ProcessedUserSchema>;
+
 const ErrorResponseSchema = z.object({
   error: z.string(),
   message: z.string(),
@@ -55,7 +57,7 @@ test('onSuccess with schema validation - valid result', async () => {
   mockFetch.mockResolvedValueOnce(mockResponse);
 
   const result = await get('/users/1', {
-    schema: UserSchema,
+    schemas: { success: UserSchema },
     onSuccess: {
       schema: ProcessedUserSchema,
       handler: (user) => {
@@ -72,7 +74,7 @@ test('onSuccess with schema validation - valid result', async () => {
         };
       },
     },
-  });
+  }) as ProcessedUser;
 
   expect(result).toEqual({
     id: 1,
@@ -99,7 +101,7 @@ test('onSuccess with schema validation - invalid result throws ValidationError',
 
   try {
     const result = await get('/users/1', {
-      schema: UserSchema,
+      schemas: { success: UserSchema },
       onSuccess: {
         schema: ProcessedUserSchema,
         handler: (user) => {
@@ -118,7 +120,7 @@ test('onSuccess with schema validation - invalid result throws ValidationError',
   } catch (error) {
     console.log('Caught error:', error);
     expect(error).toBeInstanceOf(ValidationError);
-    expect(error.message).toContain('Callback result validation failed');
+    expect((error as ValidationError).message).toContain('Callback result validation failed');
   }
 });
 
@@ -128,7 +130,7 @@ test('onError with schema validation - valid result', async () => {
   mockFetch.mockRejectedValueOnce(new Error('Network failure'));
 
   const result = await get('/users/1', {
-    schema: UserSchema,
+    schemas: { success: UserSchema },
     onNetworkError: {
       schema: ErrorResponseSchema,
       handler: (error) => {
@@ -142,7 +144,7 @@ test('onError with schema validation - valid result', async () => {
     },
   });
 
-  expect(result).toEqual({
+  expect(result as any).toEqual({
     error: 'request_failed',
     message: 'Network failure',
     code: 'NETWORK_ERROR',
@@ -156,7 +158,7 @@ test('onError with schema validation - invalid result throws ValidationError', a
 
   try {
     const _result = await get('/users/1', {
-      schema: UserSchema,
+      schemas: { success: UserSchema },
       onError: {
         schema: ErrorResponseSchema,
         handler: (error) => {
@@ -173,7 +175,7 @@ test('onError with schema validation - invalid result throws ValidationError', a
     expect.unreachable('Should have thrown ValidationError');
   } catch (error) {
     expect(error).toBeInstanceOf(ValidationError);
-    expect(error.message).toContain('Callback result validation failed');
+    expect((error as ValidationError).message).toContain('Callback result validation failed');
   }
 });
 
@@ -183,7 +185,7 @@ test('onNetworkError with Valibot schema validation', async () => {
   mockFetch.mockRejectedValueOnce(new Error('Connection timeout'));
 
   const result = await get('/users/1', {
-    schema: UserSchema,
+    schemas: { success: UserSchema },
     onNetworkError: {
       schema: ValibotErrorSchema,
       handler: (error) => {
@@ -196,7 +198,7 @@ test('onNetworkError with Valibot schema validation', async () => {
     },
   });
 
-  expect(result).toEqual({
+  expect(result as any).toEqual({
     type: 'network_error',
     details: 'Network error: Connection timeout',
     handled: true,
@@ -218,7 +220,7 @@ test('onValidationError with schema validation', async () => {
   mockFetch.mockResolvedValueOnce(mockResponse);
 
   const result = await get('/users/1', {
-    schema: UserSchema,
+    schemas: { success: UserSchema },
     onValidationError: {
       schema: ErrorResponseSchema,
       handler: (error) => {
@@ -232,7 +234,7 @@ test('onValidationError with schema validation', async () => {
     },
   });
 
-  expect(result).toEqual({
+  expect(result as any).toEqual({
     error: 'validation_failed',
     message: expect.stringContaining('validation failed'),
     code: 'SCHEMA_ERROR',
@@ -251,21 +253,21 @@ test('onHttpError with schema validation', async () => {
   mockFetch.mockResolvedValueOnce(mockResponse);
 
   const result = await get('/users/1', {
-    schema: UserSchema,
+    schemas: { success: UserSchema },
     onHttpError: {
       schema: ErrorResponseSchema,
       handler: (response) => {
-        expect(response.status).toBe(404);
+        expect((response as any).status).toBe(404);
         return {
           error: 'http_error',
-          message: `HTTP ${response.status}: ${response.statusText}`,
+          message: `HTTP ${(response as any).status}: ${(response as any).statusText}`,
           code: 'HTTP_404',
         };
       },
     },
   });
 
-  expect(result).toEqual({
+  expect(result as any).toEqual({
     error: 'http_error',
     message: 'HTTP 404: Not Found',
     code: 'HTTP_404',
@@ -287,7 +289,7 @@ test('mixed callbacks - some with schema, some without', async () => {
   mockFetch.mockResolvedValueOnce(mockResponse);
 
   const result = await get('/users/1', {
-    schema: UserSchema,
+    schemas: { success: UserSchema },
     onSuccess: {
       schema: ProcessedUserSchema,
       handler: (user) => ({
@@ -302,7 +304,7 @@ test('mixed callbacks - some with schema, some without', async () => {
     },
   });
 
-  expect(result).toEqual({
+  expect(result as any).toEqual({
     id: 1,
     name: 'John',
     email: 'john@example.com',
@@ -326,9 +328,8 @@ test('POST request with callback schema validation', async () => {
   mockFetch.mockResolvedValueOnce(mockResponse);
 
   const userData = { name: 'Jane', email: 'jane@example.com' };
-  const result = await post('/users', {
-    body: userData,
-    schema: UserSchema,
+  const result = await post('/users', userData, {
+    schemas: { success: UserSchema },
     onSuccess: {
       schema: ProcessedUserSchema,
       handler: (user) => ({
@@ -339,7 +340,7 @@ test('POST request with callback schema validation', async () => {
     },
   });
 
-  expect(result).toEqual({
+  expect(result as any).toEqual({
     id: 2,
     name: 'Jane',
     email: 'jane@example.com',
@@ -363,14 +364,14 @@ test('callback without schema validation works as before', async () => {
   mockFetch.mockResolvedValueOnce(mockResponse);
 
   const result = await get('/users/1', {
-    schema: UserSchema,
+    schemas: { success: UserSchema },
     onSuccess: (user) => {
       // Simple callback without schema validation
       return { ...user, legacy: true };
     },
   });
 
-  expect(result).toEqual({
+  expect(result as any).toEqual({
     id: 1,
     name: 'John',
     email: 'john@example.com',
@@ -393,7 +394,7 @@ test('async callback handlers are supported', async () => {
   mockFetch.mockResolvedValueOnce(mockResponse);
 
   const result = await get('/users/1', {
-    schema: UserSchema,
+    schemas: { success: UserSchema },
     onSuccess: {
       schema: ProcessedUserSchema,
       handler: async (user) => {
@@ -408,7 +409,7 @@ test('async callback handlers are supported', async () => {
     },
   });
 
-  expect(result).toEqual({
+  expect(result as any).toEqual({
     id: 1,
     name: 'John',
     email: 'john@example.com',
